@@ -1,0 +1,21 @@
+{
+  "name": "indomaweb",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "antoinep23",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "ts": "npx tsc && node dist/main.js",
+    "build": "npx tsc",
+    "test": "npm run test"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
