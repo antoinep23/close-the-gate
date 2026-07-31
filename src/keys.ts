@@ -18,8 +18,12 @@ export default class Key {
         return id;
     }
 
-    public generate(): KeyObject {
-        const rawBytes = randomBytes(32);
+    public generate(bytes: number): KeyObject {
+        if (bytes < 16 || bytes > 64) {
+            throw new Error("Key size must be between 16 and 64 bytes");
+        }
+
+        const rawBytes = randomBytes(bytes);
         this.material = createSecretKey(rawBytes);
         this.saveLocaly();
 

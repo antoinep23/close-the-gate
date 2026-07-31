@@ -3,5 +3,7 @@
 import Key from "./keys"
 
 const key = new Key;
-key.generate();
+const bytes = 32; // must be between 16 and 64 bytes
+
+key.generate(bytes);
 key.delete();
