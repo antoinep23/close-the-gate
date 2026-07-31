@@ -1,12 +1,21 @@
 import { randomBytes, createSecretKey, KeyObject, randomUUID} from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 
 export default class Key {
-    public material: KeyObject | null;
+    private id: string;
+    private material: KeyObject | null;
+    private path: string | null;
 
     constructor() {
+        this.id = this.assignId();
         this.material = null;
+        this.path = null;
+    }
+
+    private assignId(): string {
+        const id = randomUUID();
+        return id;
     }
 
     public generate(): KeyObject {
@@ -17,14 +26,31 @@ export default class Key {
         return this.material;
     }
 
+    public delete(): string | Error {
+        if (!this.material || !this.path) {
+            return new Error("Impossible to delete the key as it is not generated yet");
+        }
+
+        try {
+            unlinkSync(this.path)
+            return "Key deleted successfuly"
+        } catch(e) {
+            return new Error(`Impossible to delete the key: ${e}`)
+        } finally {
+            this.material = null;
+            this.path = null;
+        }
+    }
+
     private saveLocaly(): void {
         if (!this.material) {
             throw new Error("Impossible to save the key localy as there is no key material generated");
         }
 
         const dirPath = join(process.cwd(), 'keys');
-        const keyName = randomUUID() + ".pem";
+        const keyName = this.id + ".pem";
         const filePath = join(dirPath, keyName);
+        this.path = filePath;
 
         mkdirSync(dirPath, { recursive: true });
 

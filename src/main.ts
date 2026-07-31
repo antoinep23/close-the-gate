@@ -4,3 +4,4 @@ import Key from "./keys"
 
 const key = new Key;
 key.generate();
+key.delete();
