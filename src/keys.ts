@@ -3,8 +3,8 @@ import { mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 
 export default class Key {
-    private id: string;
-    private material: KeyObject | null;
+    public id: string;
+    public material: KeyObject | null;
     private path: string | null;
 
     constructor() {
