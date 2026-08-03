@@ -1,4 +1,4 @@
-import { createCipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, randomBytes, createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -7,6 +7,7 @@ import Key from "./keys";
 export default class File {
     public localPath: string | null;
     private fileName: string | null;
+    private hashName: string | null;
     private buffer: Buffer | null;
     private key: Key | null;
     private s3Client: S3Client;
@@ -15,6 +16,7 @@ export default class File {
     constructor(bucketName: string) {
         this.localPath = null;
         this.fileName = null;
+        this.hashName = null;
         this.buffer = null;
         this.key = null;
         this.s3Client = new S3Client({ region: process.env.AWS_REGION || 'eu-west-1' });
@@ -71,14 +73,25 @@ export default class File {
         return payload;
     }
 
+    private signName(): string {
+        if (!this.fileName) {
+            throw new Error("Error to sign the file name: no file name has been defined yet");
+        }
+
+            const hash = createHash("md5").update(this.fileName).digest("hex");
+            this.hashName = hash;
+            return hash;
+        }
+
     private async writeToS3(payload: Buffer): Promise<string> {
         if (!this.fileName || !this.bucketName) {
             throw new Error("Can not write to S3 as the names are not correctly passed")
         }
 
+        const name = this.signName();
         const command = new PutObjectCommand({
             Bucket: this.bucketName,
-            Key: this.fileName,
+            Key: name,
             Body: payload,
             ContentType: 'application/octet-stream', 
         });

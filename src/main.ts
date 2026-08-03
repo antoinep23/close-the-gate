@@ -7,7 +7,7 @@ const key = new Key;
 const bytes = 32; // must be between 16 and 64 bytes
 
 key.generate(bytes);
-// key.delete();
 
-const file = new File("test-bucket");
+const s3Folder = process.env.S3_BUCKET!;
+const file = new File(s3Folder);
 file.upload("example.txt", key)
