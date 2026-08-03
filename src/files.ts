@@ -1,9 +1,9 @@
-import { createCipheriv, randomBytes, createHash } from "node:crypto";
+import { createCipheriv, randomBytes, createHmac } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { PutCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import Key from "./keys";
 
 export default class File {
@@ -93,7 +93,14 @@ export default class File {
             throw new Error("Error to sign the file name: no file name has been defined yet");
         }
 
-            const hash = createHash("md5").update(this.fileName).digest("hex");
+        if (!this.key?.material) {
+            throw new Error("Error to sign the file name: no key material");
+        }
+
+            const hash = createHmac("sha256", this.key.material)
+            .update(this.fileName)
+            .digest("hex");
+
             this.hashName = hash;
             return hash;
         }
@@ -219,8 +226,17 @@ export default class File {
         };
 
         try {
+            // S3 command
             const command = new DeleteObjectCommand(input);
             await this.s3Client.send(command);
+
+            // DynamoDB command
+            const deleteCommand = new DeleteCommand({
+                TableName: this.dynamoTableName,
+                Key: { fileName: this.fileName },
+            });
+            await this.dynamoDBClient.send(deleteCommand);
+
             return "File deleted successfuly";
         } catch(e) {
             throw new Error(`Error while deleting the file: ${e}`);
