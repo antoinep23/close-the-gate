@@ -1,7 +1,7 @@
 {
-  "name": "indomacloud",
+  "name": "close-the-gate",
   "version": "1.0.0",
-  "description": "",
+  "description": "A privacy-first software to upload encrypted-only files to AWS S3 while having full control and ownership over the keys and the encryption process.",
   "license": "ISC",
   "author": "antoinep23",
   "type": "commonjs",
