@@ -1,7 +1,7 @@
 import { createCipheriv, randomBytes, createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import Key from "./keys";
@@ -151,6 +151,10 @@ export default class File {
     public async download(fileName: string, key: Key): Promise<string> {
         this.key = key;
         this.fileName = fileName;
+        if (!this.key || !this.fileName) {
+            throw new Error("Impossible to download the file as one or some arguments passed to the function are missing");
+        }
+
         this.signName();
 
         const command = new GetObjectCommand({
@@ -193,6 +197,34 @@ export default class File {
         ]);
 
         return decryptedFile;
+    }
+
+    public async delete(fileName: string, key: Key): Promise<string> {
+        this.fileName = fileName;
+        this.key = key;
+
+        if (!this.key || !this.fileName) {
+            throw new Error("Impossible to delete the file as one or some arguments passed to the function are missing");
+        }
+
+        this.signName();
+
+        if (!this.hashName) {
+            throw new Error("Impossible to delete the file as the hash name is not present");
+        }
+
+        const input = { 
+            Bucket: this.bucketName,
+            Key: this.hashName,
+        };
+
+        try {
+            const command = new DeleteObjectCommand(input);
+            await this.s3Client.send(command);
+            return "File deleted successfuly";
+        } catch(e) {
+            throw new Error(`Error while deleting the file: ${e}`);
+        }
     }
 }
 
