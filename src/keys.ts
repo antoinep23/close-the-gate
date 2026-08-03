@@ -1,5 +1,5 @@
 import { randomBytes, createSecretKey, KeyObject, randomUUID} from 'node:crypto';
-import { mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
+import { mkdirSync, writeFileSync, unlinkSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export default class Key {
@@ -61,5 +61,19 @@ export default class Key {
         const keyBuffer = this.material.export();
 
         writeFileSync(filePath, keyBuffer, { mode: 0o600 });
+    }
+
+    public retrieve(keyName: string): KeyObject | Error {
+        try {
+            const path = join(process.cwd(), 'keys', keyName);
+            const keyBuffer = readFileSync(path);
+            
+            this.material = createSecretKey(keyBuffer);
+            this.path = path;
+
+            return this.material;
+        } catch (e) {
+            return new Error(`Error while retrieving the key: ${e}`);
+        }
     }
 }

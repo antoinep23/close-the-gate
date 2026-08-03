@@ -1,7 +1,7 @@
 import { createCipheriv, randomBytes, createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import Key from "./keys";
@@ -148,6 +148,52 @@ export default class File {
         }
     }
 
+    public async download(fileName: string, key: Key): Promise<string> {
+        this.key = key;
+        this.fileName = fileName;
+        this.signName();
+
+        const command = new GetObjectCommand({
+            Bucket: this.bucketName,
+            Key: this.hashName!,
+        });
+
+        try {
+            const response = await this.s3Client.send(command);
+            const chunks: Uint8Array[] = [];
+            for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+                chunks.push(chunk);
+            }
+            const encryptedData = Buffer.concat(chunks);
+            const decryptedData = this.decrypt(encryptedData);
+
+            const dirPath = join(process.cwd(), 'download');
+            mkdirSync(dirPath, { recursive: true });
+
+            writeFileSync(join(dirPath, fileName), decryptedData);
+
+            return `download/${fileName}`;
+        } catch (e) {
+            throw new Error(`Error while downloading from S3: ${e}`);
+        }
+    }
+
+    private decrypt(encryptedData: Buffer): Buffer {
+        if (!this.key?.material) {
+            throw new Error("Decryption is not possible as the key material is missing");
+        }
+
+        const iv = encryptedData.subarray(0, 12);
+        const encryptedFile = encryptedData.subarray(12);
+
+        const decipher = createCipheriv('aes-256-gcm', this.key.material, iv);
+        const decryptedFile = Buffer.concat([
+            decipher.update(encryptedFile),
+            decipher.final()
+        ]);
+
+        return decryptedFile;
+    }
 }
 
 interface FileMetadata {
