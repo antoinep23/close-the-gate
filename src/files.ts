@@ -227,15 +227,15 @@ export default class File {
 
         try {
             // S3 command
-            const command = new DeleteObjectCommand(input);
-            await this.s3Client.send(command);
+            const s3Command = new DeleteObjectCommand(input);
+            await this.s3Client.send(s3Command);
 
             // DynamoDB command
-            const deleteCommand = new DeleteCommand({
+            const dynamoDBCommand = new DeleteCommand({
                 TableName: this.dynamoTableName,
                 Key: { fileName: this.fileName },
             });
-            await this.dynamoDBClient.send(deleteCommand);
+            await this.dynamoDBClient.send(dynamoDBCommand);
 
             return "File deleted successfuly";
         } catch(e) {
