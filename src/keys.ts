@@ -18,9 +18,9 @@ export default class Key {
         return id;
     }
 
-    public generate(bytes: number): KeyObject {
+    public generate(bytes: number = 32): KeyObject {
         if (bytes < 16 || bytes > 64) {
-            throw new Error("Key size must be between 16 and 64 bytes");
+            throw new Error("Key size must be between 16 and 64 bytes (leave empty for default 32 bytes)");
         }
 
         const rawBytes = randomBytes(bytes);
