@@ -1,10 +1,11 @@
 import { createCipheriv, randomBytes, createHmac } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, createReadStream } from "node:fs";
 import { join } from "node:path";
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import Key from "./keys";
+import { FileMetadata } from "./interfaces";
 
 export default class File {
     public localPath: string | null;
@@ -36,32 +37,43 @@ export default class File {
         this.fileName = fileName;
         const path = join(process.cwd(), `files/${fileName}`);
         this.localPath = path;
-        this.retrieve();
+
+        await this.retrieve();
 
         const payload = this.encrypt();
-        let uploadPath = null;
 
         try {
-            uploadPath = await this.writeToS3(payload);
+            const uploadPath = await this.writeToS3(payload);
             await this.writeToDynamoDB();
+
+            return uploadPath;
         } catch (e) {
             throw new Error(`Error while uploading the file: ${e}`);
         }
-
-        return uploadPath;
     }
 
-    private retrieve(): void {
-        if (!this.localPath) {
+    private retrieve(): Promise<string> {
+        const localPath = this.localPath;
+
+        if (!localPath) {
             throw new Error("Error to retrieve the file: no local path has been defined yet");
         }
 
-        try {
-            const rawFile = readFileSync(this.localPath); // work for 'not too big' files. implement stream later
-            this.buffer = rawFile;
-        } catch(e) {
-            throw new Error(`Error while retrieving the file on the local machine: ${e}`);
-        }
+        return new Promise((resolve, reject) => {
+            const chunks: Buffer[] = [];
+            const readStream = createReadStream(localPath);
+
+            readStream.on("data", (chunk: Buffer) => {
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            });
+            readStream.on("end", () => {
+                this.buffer = Buffer.concat(chunks);
+                resolve("File successfully read into buffer");
+            });
+            readStream.on("error", (err) => {
+                reject(new Error(`Error while reading the file: ${err}`));
+            });
+        });
     }
 
     private encrypt(): Buffer {
@@ -242,11 +254,4 @@ export default class File {
             throw new Error(`Error while deleting the file: ${e}`);
         }
     }
-}
-
-interface FileMetadata {
-    fileName: string;
-    iv: string;
-    size: number;
-    uploadDate: string;
 }
