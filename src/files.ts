@@ -2,6 +2,8 @@ import { createCipheriv, randomBytes, createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import Key from "./keys";
 
 export default class File {
@@ -10,17 +12,23 @@ export default class File {
     private hashName: string | null;
     private buffer: Buffer | null;
     private key: Key | null;
+    private iv: string | null;
     private s3Client: S3Client;
     private bucketName: string;
+    private dynamoDBClient: DynamoDBClient;
+    private dynamoTableName: string;
 
-    constructor(bucketName: string) {
+    constructor() {
         this.localPath = null;
         this.fileName = null;
         this.hashName = null;
         this.buffer = null;
         this.key = null;
-        this.s3Client = new S3Client({ region: process.env.AWS_REGION || 'eu-west-1' });
-        this.bucketName = bucketName;
+        this.iv = null;
+        this.s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
+        this.bucketName = process.env.S3_BUCKET!;
+        this.dynamoDBClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
+        this.dynamoTableName = process.env.DYNAMO_TABLE!;
     }
 
     public async upload(fileName: string, key: Key): Promise<string> {
@@ -31,7 +39,14 @@ export default class File {
         this.retrieve();
 
         const payload = this.encrypt();
-        const uploadPath = await this.writeToS3(payload);
+        let uploadPath = null;
+
+        try {
+            uploadPath = await this.writeToS3(payload);
+            await this.writeToDynamoDB();
+        } catch (e) {
+            throw new Error(`Error while uploading the file: ${e}`);
+        }
 
         return uploadPath;
     }
@@ -49,7 +64,6 @@ export default class File {
         }
     }
 
-
     private encrypt(): Buffer {
         const keyMaterial = this.key?.material;
 
@@ -62,6 +76,7 @@ export default class File {
         }
 
         const iv = randomBytes(12);
+        this.iv = iv.toString('base64');
         const cipher = createCipheriv('aes-256-gcm', keyMaterial, iv);
 
         const encryptedFile = Buffer.concat([
@@ -103,4 +118,41 @@ export default class File {
             throw new Error(`Error while uploading to S3: ${e}`);
         }
     }
+
+    private async writeToDynamoDB() : Promise<string> {
+        if (!this.fileName || !this.iv || !this.buffer) {
+            throw new Error("Can not write to DynamoDB as the file name, iv or buffer are missing")
+        }
+
+        const metadata: FileMetadata = {
+            fileName: this.fileName!,
+            iv: this.iv!,
+            size: this.buffer!.length,
+            uploadDate: new Date().toISOString(),
+        };
+
+        try {
+            if(!this.dynamoDBClient || !this.dynamoTableName) {
+                throw new Error("DynamoDB client is not initialized or table name is missing");
+            }
+
+            const command = new PutCommand({
+            TableName: this.dynamoTableName,
+            Item: metadata,
+        });
+        await this.dynamoDBClient.send(command);
+
+        return "File metadata successfully uploaded to DynamoDB";
+        } catch (e) {
+            throw new Error(`Error while uploading metadata to DynamoDB: ${e}`);    
+        }
+    }
+
+}
+
+interface FileMetadata {
+    fileName: string;
+    iv: string;
+    size: number;
+    uploadDate: string;
 }
