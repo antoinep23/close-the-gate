@@ -1,14 +1,7 @@
+#!/usr/bin/env node
 /// <reference types="node" />
 ///
-import Key from "./keys"
-import File from "./files"
+import "dotenv/config";
+import { program } from "./cli";
 
-const key = new Key;
-// const bytes = 32; // must be between 16 and 64 bytes
-// key.generate(bytes);
-key.retrieve("010c0295-4c46-4b70-8768-b1c4c461f72f.pem");
-
-const file = new File();
-// file.upload("100Mb.dat", key);
-// file.download("100Mb.dat", key);
-// file.delete("100Mb.dat", key);
+program.parse(process.argv);

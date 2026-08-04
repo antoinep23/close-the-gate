@@ -18,7 +18,7 @@ export default class Key {
         return id;
     }
 
-    public generate(bytes: number = 32): KeyObject {
+    public generate(bytes: number = 32): string {
         if (bytes < 16 || bytes > 64) {
             throw new Error("Key size must be between 16 and 64 bytes (leave empty for default 32 bytes)");
         }
@@ -27,7 +27,7 @@ export default class Key {
         this.material = createSecretKey(rawBytes);
         this.saveLocaly();
 
-        return this.material;
+        return this.path as string;
     }
 
     public delete(): string | Error {
