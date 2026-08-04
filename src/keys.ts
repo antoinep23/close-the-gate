@@ -6,11 +6,13 @@ export default class Key {
     public id: string;
     public material: KeyObject | null;
     private path: string | null;
+    private customName: string | null;
 
     constructor() {
         this.id = this.assignId();
         this.material = null;
         this.path = null;
+        this.customName = null;
     }
 
     private assignId(): string {
@@ -18,9 +20,13 @@ export default class Key {
         return id;
     }
 
-    public generate(bytes: number = 32): string {
+    public generate(bytes: number = 32, keyName?: string): string {
         if (bytes < 16 || bytes > 64) {
             throw new Error("Key size must be between 16 and 64 bytes (leave empty for default 32 bytes)");
+        }
+
+        if (keyName != null) {
+            this.customName = keyName;
         }
 
         const rawBytes = randomBytes(bytes);
@@ -52,7 +58,7 @@ export default class Key {
         }
 
         const dirPath = join(process.cwd(), 'keys');
-        const keyName = this.id + ".pem";
+        const keyName = this.customName ? `${this.customName}.pem` : `${this.id}.pem`;
         const filePath = join(dirPath, keyName);
         this.path = filePath;
 
