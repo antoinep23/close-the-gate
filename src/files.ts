@@ -47,8 +47,8 @@ export default class File {
             await this.writeToDynamoDB();
 
             return uploadPath;
-        } catch (e) {
-            throw new Error(`Error while uploading the file: ${e}`);
+        } catch (e: unknown) {
+            throw new Error(`Error while uploading the file: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
     }
 
@@ -133,8 +133,8 @@ export default class File {
         try {
             await this.s3Client.send(command);
             return "File successfuly uploaded encrypted to the S3 bucket"
-        } catch (e) {
-            throw new Error(`Error while uploading to S3: ${e}`);
+        } catch (e: unknown) {
+            throw new Error(`Error while uploading to S3: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
     }
 
@@ -162,12 +162,12 @@ export default class File {
         await this.dynamoDBClient.send(command);
 
         return "File metadata successfully uploaded to DynamoDB";
-        } catch (e) {
-            throw new Error(`Error while uploading metadata to DynamoDB: ${e}`);    
+        } catch (e: unknown) {
+            throw new Error(`Error while uploading metadata to DynamoDB: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);    
         }
     }
 
-    public async download(fileName: string, key: Key): Promise<string> {
+    public async download(fileName: string, key: Key): Promise<string | Error> {
         this.key = key;
         this.fileName = fileName;
         if (!this.key || !this.fileName) {
@@ -196,8 +196,8 @@ export default class File {
             writeFileSync(join(dirPath, fileName), decryptedData);
 
             return `download/${fileName}`;
-        } catch (e) {
-            throw new Error(`Error while downloading from S3: ${e}`);
+        } catch (e: unknown) {
+            throw new Error(`Error while downloading from S3 - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
     }
 
@@ -250,8 +250,8 @@ export default class File {
             await this.dynamoDBClient.send(dynamoDBCommand);
 
             return "File deleted successfuly";
-        } catch(e) {
-            throw new Error(`Error while deleting the file: ${e}`);
+        } catch(e: unknown) {
+            throw new Error(`Error while deleting the file - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
     }
 }

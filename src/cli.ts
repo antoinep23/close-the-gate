@@ -22,8 +22,8 @@ program
     try {
       const generatedKeyPath = key.generate(bytes, keyName);
       console.log("Key generated successfully:", generatedKeyPath);
-    } catch(e) {
-      console.error("Error generating key: ", e);
+    } catch(e: unknown) {
+      console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     }
   });
 
@@ -44,9 +44,9 @@ program
         throw deleted;
       }
 
-      console.log("Key deleted successfully");
-    } catch(e) {
-      console.error("Error deleting key: ", e);
+      console.log(deleted);
+    } catch(e: unknown) {
+      console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     }
   });
 
@@ -70,18 +70,18 @@ program
         throw uploaded;
       }
 
-      console.log("File uploaded successfully");
-    } catch(e) {
-      console.error("Error uploading file: ", e);
+      console.log(uploaded);
+    } catch(e: unknown) {
+      console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     }
   })
 
   program
   .command("delete-file")
-  .description("Delete an encrypted file from your AWS S3")
+  .description("Delete an encrypted file from your AWS S3. Ensure you pass the right key associated with the file or the deletion will not happen")
   .requiredOption("-f, --file <fileName>", "Name of the file to delete (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for deletion, located inside the /keys folder")
-  .action((options) => {
+  .action(async (options) => {
     const file = new File();
     const key = new Key();
     
@@ -91,14 +91,9 @@ program
         throw retrieved;
       }
 
-      const deleted = file.delete(options.file, key);
-      if (deleted instanceof Error) {
-        throw deleted;
-      }
-
-      console.log("File deleted successfully");
-    } catch(e) {
-      console.error("Error deleting file: ", e);
+      await file.delete(options.file, key);
+    } catch(e: unknown) {
+      console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     }
   });
 
@@ -107,7 +102,7 @@ program
   .description("Download an encrypted file from your AWS S3")
   .requiredOption("-f, --file <fileName>", "Name of the file to download (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for download, located inside the /keys folder")
-  .action((options) => {
+  .action(async (options) => {
     const file = new File();
     const key = new Key();
     
@@ -117,13 +112,10 @@ program
         throw retrieved;
       }
 
-      const downloaded = file.download(options.file, key);
-      if (downloaded instanceof Error) {
-        throw downloaded;
-      }
+      const downloadedPath = await file.download(options.file, key);
 
-      console.log("File downloaded successfully");
-    } catch(e) {
-      console.error("Error downloading file: ", e);
+      console.log(`File downloaded successfully at ${downloadedPath}`);
+    } catch(e: unknown) {
+      console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     }
   });

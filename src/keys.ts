@@ -44,8 +44,8 @@ export default class Key {
         try {
             unlinkSync(this.path)
             return "Key deleted successfuly"
-        } catch(e) {
-            return new Error(`Impossible to delete the key: ${e}`)
+        } catch(e: unknown) {
+            return new Error(`Impossible to delete the key: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`)
         } finally {
             this.material = null;
             this.path = null;
@@ -78,8 +78,8 @@ export default class Key {
             this.path = path;
 
             return this.material;
-        } catch (e) {
-            return new Error(`Error while retrieving the key: ${e}`);
+        } catch (e: unknown) {
+            return new Error(`Error while retrieving the key: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
     }
 }
