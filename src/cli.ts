@@ -32,11 +32,14 @@ program
 program
   .command("delete-key")
   .description("Delete a key. Make sure no file decryption relevant to that key is needed")
-  .requiredOption("-k, --key <keyName>", "Name of the key file to delete inside the /keys folder")
+  .requiredOption("-n, --key-name <keyName>", "Name of the key file to delete")
+  .option("-p, --path <path>", "Custom path for the key (default is /keys at the root of the process)")
   .action((options) => {
     const key = new Key();
+    const customPath = options.path ? options.path : null;
+    
     try {
-      const retrieved = key.retrieve(options.key);
+      const retrieved = key.retrieve(options.keyName, customPath);
       if (retrieved instanceof Error) {
         throw retrieved;
       }
