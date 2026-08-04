@@ -6,7 +6,17 @@ export const program = new Command();
 
 program
   .name("ctg")
-  .description("Close The Gate CLI")
+  .description(`
+   _______
+  |  ___  |===================.
+  | |   | |  Close The Gate  /
+  | |___| |================='
+  |_______|  |_|       |_|
+  
+  Close The Gate (CTG) CLI
+  Zero-Knowledge S3 Shield
+  © antoinep23
+  `)
   .version("1.0.0");
 
 program
