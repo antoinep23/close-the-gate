@@ -6,7 +6,19 @@ export const program = new Command();
 
 program
   .name("ctg")
-  .description("Close The Gate CLI")
+  .description(`                                                                      
+ ▗▄▄▖█  ▄▄▄   ▄▄▄ ▗▞▀▚▖       ■  ▐▌   ▗▞▀▚▖       ▗▞▀▜▌   ■  ▗▞▀▚▖
+▐▌   █ █   █ ▀▄▄  ▐▛▀▀▘    ▗▄▟▙▄▖▐▌   ▐▛▀▀▘       ▝▚▄▟▌▗▄▟▙▄▖▐▛▀▀▘
+▐▌   █ ▀▄▄▄▀ ▄▄▄▀ ▝▚▄▄▖      ▐▌  ▐▛▀▚▖▝▚▄▄▖              ▐▌  ▝▚▄▄▖
+▝▚▄▄▖█                       ▐▌  ▐▌ ▐▌          ▗▄▖      ▐▌       
+                             ▐▌                ▐▌ ▐▌     ▐▌       
+                                                ▝▀▜▌              
+                                               ▐▙▄▞▘              
+
+  Close The Gate (CTG) CLI
+  Zero-Knowledge S3 Shield
+  © antoinep23
+  `)
   .version("1.0.0");
 
 program
@@ -32,11 +44,14 @@ program
 program
   .command("delete-key")
   .description("Delete a key. Make sure no file decryption relevant to that key is needed")
-  .requiredOption("-k, --key <keyName>", "Name of the key file to delete inside the /keys folder")
+  .requiredOption("-n, --key-name <keyName>", "Name of the key file to delete")
+  .option("-p, --path <path>", "Custom path for the key (default is /keys at the root of the process)")
   .action((options) => {
     const key = new Key();
+    const customPath = options.path ? options.path : null;
+    
     try {
-      const retrieved = key.retrieve(options.key);
+      const retrieved = key.retrieve(options.keyName, customPath);
       if (retrieved instanceof Error) {
         throw retrieved;
       }
@@ -57,9 +72,11 @@ program
   .description("Upload an encrypted file to your AWS S3")
   .requiredOption("-f, --file <fileName>", "Name of the file to upload (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for upload, located inside the /keys folder")
-  .action((options) => {
+  .option("-p, --path <path>", "Custom path of the file directory (default is /files at the root of the process)")
+  .action(async (options) => {
     const file = new File();
     const key = new Key();
+    const customPath = options.path ? options.path : null;
     
     try {
       const retrieved = key.retrieve(options.key);
@@ -67,10 +84,7 @@ program
         throw retrieved;
       }
 
-      const uploaded = file.upload(options.file, key);
-      if (uploaded instanceof Error) {
-        throw uploaded;
-      }
+      const uploaded = await file.upload(options.file, key, customPath);
 
       console.log(uploaded);
     } catch(e: unknown) {
@@ -104,9 +118,11 @@ program
   .description("Download an encrypted file from your AWS S3")
   .requiredOption("-f, --file <fileName>", "Name of the file to download (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for download, located inside the /keys folder")
+  .option("-p, --path <path>", "Custom path of the file directory (default is /files at the root of the process)")
   .action(async (options) => {
     const file = new File();
     const key = new Key();
+    const customPath = options.path ? options.path : null;
     
     try {
       const retrieved = key.retrieve(options.key);
@@ -114,7 +130,7 @@ program
         throw retrieved;
       }
 
-      const downloadedPath = await file.download(options.file, key);
+      const downloadedPath = await file.download(options.file, key, customPath);
 
       console.log(`File downloaded successfully at ${downloadedPath}`);
     } catch(e: unknown) {
