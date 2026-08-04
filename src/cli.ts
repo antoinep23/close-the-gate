@@ -6,13 +6,15 @@ export const program = new Command();
 
 program
   .name("ctg")
-  .description(`
-   _______
-  |  ___  |===================.
-  | |   | |  Close The Gate  /
-  | |___| |================='
-  |_______|  |_|       |_|
-  
+  .description(`                                                                      
+ ▗▄▄▖█  ▄▄▄   ▄▄▄ ▗▞▀▚▖       ■  ▐▌   ▗▞▀▚▖       ▗▞▀▜▌   ■  ▗▞▀▚▖
+▐▌   █ █   █ ▀▄▄  ▐▛▀▀▘    ▗▄▟▙▄▖▐▌   ▐▛▀▀▘       ▝▚▄▟▌▗▄▟▙▄▖▐▛▀▀▘
+▐▌   █ ▀▄▄▄▀ ▄▄▄▀ ▝▚▄▄▖      ▐▌  ▐▛▀▚▖▝▚▄▄▖              ▐▌  ▝▚▄▄▖
+▝▚▄▄▖█                       ▐▌  ▐▌ ▐▌          ▗▄▖      ▐▌       
+                             ▐▌                ▐▌ ▐▌     ▐▌       
+                                                ▝▀▜▌              
+                                               ▐▙▄▞▘              
+
   Close The Gate (CTG) CLI
   Zero-Knowledge S3 Shield
   © antoinep23
