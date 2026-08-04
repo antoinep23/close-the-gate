@@ -6,12 +6,14 @@ export default class Key {
     public id: string;
     public material: KeyObject | null;
     private path: string | null;
+    private customPath: string | null;
     private customName: string | null;
 
     constructor() {
         this.id = this.assignId();
         this.material = null;
         this.path = null;
+        this.customPath = null;
         this.customName = null;
     }
 
@@ -20,7 +22,7 @@ export default class Key {
         return id;
     }
 
-    public generate(bytes: number = 32, keyName?: string): string {
+    public generate(bytes: number = 32, keyName?: string, customPath?: string): string {
         if (bytes < 16 || bytes > 64) {
             throw new Error("Key size must be between 16 and 64 bytes (leave empty for default 32 bytes)");
         }
@@ -29,8 +31,11 @@ export default class Key {
             this.customName = keyName;
         }
 
+        if (customPath) this.customPath = customPath;
+
         const rawBytes = randomBytes(bytes);
         this.material = createSecretKey(rawBytes);
+        this.configureDirPath();
         this.saveLocaly();
 
         return this.path as string;
@@ -49,6 +54,7 @@ export default class Key {
         } finally {
             this.material = null;
             this.path = null;
+            this.customPath = null;
         }
     }
 
@@ -57,29 +63,36 @@ export default class Key {
             throw new Error("Impossible to save the key localy as there is no key material generated");
         }
 
-        const dirPath = join(process.cwd(), 'keys');
         const keyName = this.customName ? `${this.customName}.pem` : `${this.id}.pem`;
-        const filePath = join(dirPath, keyName);
+        const filePath = join(this.path as string, keyName);
         this.path = filePath;
-
-        mkdirSync(dirPath, { recursive: true });
 
         const keyBuffer = this.material.export();
 
-        writeFileSync(filePath, keyBuffer, { mode: 0o600 });
+        writeFileSync(this.path, keyBuffer, { mode: 0o600 });
     }
 
-    public retrieve(keyName: string): KeyObject | Error {
+    private configureDirPath(): string {
+        const path = this.customPath != null ? this.customPath : join(process.cwd(), "keys");
+        this.path = path;
+        mkdirSync(this.path as string, { recursive: true });
+        return this.path;
+    }
+
+    public retrieve(keyName: string, customPath?: string): KeyObject | Error {
+        if (customPath) this.customPath = customPath;
+        this.configureDirPath();
+        
         try {
-            const path = join(process.cwd(), 'keys', keyName);
-            const keyBuffer = readFileSync(path);
-            
-            this.material = createSecretKey(keyBuffer);
+            const path = join(this.path as string, keyName);
             this.path = path;
+            
+            const keyBuffer = readFileSync(this.path);
+            this.material = createSecretKey(keyBuffer);
 
             return this.material;
         } catch (e: unknown) {
-            return new Error(`Error while retrieving the key: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
+            throw new Error(`Error while retrieving the key: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
     }
 }

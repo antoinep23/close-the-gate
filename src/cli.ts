@@ -13,14 +13,16 @@ program
   .command("generate-key")
   .description("Generate a new key")
   .option("-b, --bytes <number>", "Number of bytes for the key (between 16 and 64)", "32")
-  .option("-n, --key-name <keyName>", "Custom name for the key")
+  .option("-n, --key-name <keyName>", "Custom name for the key (without the extension)")
+  .option("-p, --path <path>", "Custom path for the key (default is /keys at the root of the process)")
   .action((options) => {
     const key = new Key();
     const bytes = parseInt(options.bytes, 10);
     const keyName = options.keyName ? options.keyName : null;
+    const customPath = options.path ? options.path : null;
 
     try {
-      const generatedKeyPath = key.generate(bytes, keyName);
+      const generatedKeyPath = key.generate(bytes, keyName, customPath);
       console.log("Key generated successfully:", generatedKeyPath);
     } catch(e: unknown) {
       console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
