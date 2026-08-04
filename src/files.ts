@@ -9,6 +9,7 @@ import { FileMetadata } from "./interfaces";
 
 export default class File {
     public localPath: string | null;
+    public customPath: string | null;
     private fileName: string | null;
     private hashName: string | null;
     private buffer: Buffer | null;
@@ -21,6 +22,7 @@ export default class File {
 
     constructor() {
         this.localPath = null;
+        this.customPath = null;
         this.fileName = null;
         this.hashName = null;
         this.buffer = null;
@@ -32,10 +34,13 @@ export default class File {
         this.dynamoTableName = process.env.DYNAMO_TABLE!;
     }
 
-    public async upload(fileName: string, key: Key): Promise<string> {
+    public async upload(fileName: string, key: Key, customPath?: string): Promise<string> {
         this.key = key;
         this.fileName = fileName;
-        const path = join(process.cwd(), `files/${fileName}`);
+        
+        if (customPath) this.customPath = customPath;
+        this.configureDirPath("files");
+        const path = join(this.localPath as string, fileName);
         this.localPath = path;
 
         await this.retrieve();
@@ -167,12 +172,15 @@ export default class File {
         }
     }
 
-    public async download(fileName: string, key: Key): Promise<string | Error> {
+    public async download(fileName: string, key: Key, customPath?: string): Promise<string | Error> {
         this.key = key;
         this.fileName = fileName;
         if (!this.key || !this.fileName) {
             throw new Error("Impossible to download the file as one or some arguments passed to the function are missing");
         }
+
+        if (customPath) this.customPath = customPath;
+        this.configureDirPath("download");
 
         this.signName();
 
@@ -190,12 +198,11 @@ export default class File {
             const encryptedData = Buffer.concat(chunks);
             const decryptedData = this.decrypt(encryptedData);
 
-            const dirPath = join(process.cwd(), 'download');
-            mkdirSync(dirPath, { recursive: true });
+            mkdirSync(this.localPath as string, { recursive: true });
 
-            writeFileSync(join(dirPath, fileName), decryptedData);
+            writeFileSync(join(this.localPath as string, fileName), decryptedData);
 
-            return `download/${fileName}`;
+            return `${this.localPath}/${fileName}`;
         } catch (e: unknown) {
             throw new Error(`Error while downloading from S3 - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
@@ -253,5 +260,12 @@ export default class File {
         } catch(e: unknown) {
             throw new Error(`Error while deleting the file - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
+    }
+
+    private configureDirPath(customDir: string = "files"): string {
+        const path = this.customPath != null ? this.customPath : join(process.cwd(), customDir);
+        this.localPath = path;
+        mkdirSync(this.localPath as string, { recursive: true });
+        return this.localPath;
     }
 }
