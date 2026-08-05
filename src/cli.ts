@@ -26,12 +26,12 @@ program
   .description("Generate a new key")
   .option("-b, --bytes <number>", "Number of bytes for the key (between 16 and 64)", "32")
   .option("-n, --key-name <keyName>", "Custom name for the key (without the extension)")
-  .option("-p, --path <path>", "Custom path for the key (default is /keys at the root of the process)")
+  .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
   .action((options) => {
     const key = new Key();
     const bytes = parseInt(options.bytes, 10);
     const keyName = options.keyName ? options.keyName : null;
-    const customPath = options.path ? options.path : null;
+    const customPath = options.keyPath ? options.keyPath : null;
 
     try {
       const generatedKeyPath = key.generate(bytes, keyName, customPath);
@@ -45,10 +45,10 @@ program
   .command("delete-key")
   .description("Delete a key. Make sure no file decryption relevant to that key is needed")
   .requiredOption("-n, --key-name <keyName>", "Name of the key file to delete")
-  .option("-p, --path <path>", "Custom path for the key (default is /keys at the root of the process)")
+  .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
   .action((options) => {
     const key = new Key();
-    const customPath = options.path ? options.path : null;
+    const customPath = options.keyPath ? options.keyPath : null;
     
     try {
       const retrieved = key.retrieve(options.keyName, customPath);
@@ -73,18 +73,20 @@ program
   .requiredOption("-f, --file <fileName>", "Name of the file to upload (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for upload, located inside the /keys folder")
   .option("-p, --path <path>", "Custom path of the file directory (default is /files at the root of the process)")
+  .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
   .action(async (options) => {
     const file = new File();
     const key = new Key();
-    const customPath = options.path ? options.path : null;
-    
+    const customFilePath = options.path ? options.path : null;
+    const customKeyPath = options.keyPath ? options.keyPath : null;
+
     try {
-      const retrieved = key.retrieve(options.key);
+      const retrieved = key.retrieve(options.key, customKeyPath);
       if (retrieved instanceof Error) {
         throw retrieved;
       }
 
-      const uploaded = await file.upload(options.file, key, customPath);
+      const uploaded = await file.upload(options.file, key, customFilePath);
 
       console.log(uploaded);
     } catch(e: unknown) {
@@ -97,12 +99,14 @@ program
   .description("Delete an encrypted file from your AWS S3. Ensure you pass the right key associated with the file or the deletion will not happen")
   .requiredOption("-f, --file <fileName>", "Name of the file to delete (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for deletion, located inside the /keys folder")
+  .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
   .action(async (options) => {
     const file = new File();
     const key = new Key();
-    
+    const customKeyPath = options.keyPath ? options.keyPath : null;
+
     try {
-      const retrieved = key.retrieve(options.key);
+      const retrieved = key.retrieve(options.key, customKeyPath);
       if (retrieved instanceof Error) {
         throw retrieved;
       }
@@ -119,13 +123,15 @@ program
   .requiredOption("-f, --file <fileName>", "Name of the file to download (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for download, located inside the /keys folder")
   .option("-p, --path <path>", "Custom path of the file directory (default is /files at the root of the process)")
+  .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
   .action(async (options) => {
     const file = new File();
     const key = new Key();
     const customPath = options.path ? options.path : null;
-    
+    const customKeyPath = options.keyPath ? options.keyPath : null;
+
     try {
-      const retrieved = key.retrieve(options.key);
+      const retrieved = key.retrieve(options.key, customKeyPath);
       if (retrieved instanceof Error) {
         throw retrieved;
       }
