@@ -72,12 +72,12 @@ program
   .description("Upload an encrypted file to your AWS S3")
   .requiredOption("-f, --file <fileName>", "Name of the file to upload (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for upload, located inside the /keys folder")
-  .option("-p, --path <path>", "Custom path of the file directory (default is /files at the root of the process)")
+  .option("-p, --dir-path <dirPath>", "Custom path of the file directory (default is /files at the root of the process)")
   .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
   .action(async (options) => {
     const file = new File();
     const key = new Key();
-    const customFilePath = options.path ? options.path : null;
+    const customFilePath = options.dirPath ? options.dirPath : null;
     const customKeyPath = options.keyPath ? options.keyPath : null;
 
     try {
@@ -122,12 +122,12 @@ program
   .description("Download an encrypted file from your AWS S3")
   .requiredOption("-f, --file <fileName>", "Name of the file to download (located inside the /files folder)")
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for download, located inside the /keys folder")
-  .option("-p, --path <path>", "Custom path of the file directory (default is /files at the root of the process)")
+  .option("-p, --dir-path <dirPath>", "Custom path of the file directory (default is /files at the root of the process)")
   .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
   .action(async (options) => {
     const file = new File();
     const key = new Key();
-    const customPath = options.path ? options.path : null;
+    const customFilePath = options.dirPath ? options.dirPath : null;
     const customKeyPath = options.keyPath ? options.keyPath : null;
 
     try {
@@ -136,7 +136,7 @@ program
         throw retrieved;
       }
 
-      const downloadedPath = await file.download(options.file, key, customPath);
+      const downloadedPath = await file.download(options.file, key, customFilePath);
 
       console.log(`File downloaded successfully at ${downloadedPath}`);
     } catch(e: unknown) {

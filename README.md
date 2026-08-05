@@ -1,7 +1,5 @@
 # Close the gate
 
-## Description
-
 A privacy-first software to upload encrypted-only files to AWS S3 while having full control and ownership over the keys and the encryption process.
 
 It follows a strict Zero-Knowledge architecture: the cloud provider (AWS S3) and the database (DynamoDB) never have access to the raw data or the cryptographic keys.
@@ -33,7 +31,7 @@ S3_BUCKET=your-bucket-name
 DYNAMO_TABLE=your-table-name
 ```
 
-## Installation & Usage
+## Installation
 
 1. Install the dependencies:
 
@@ -41,15 +39,103 @@ DYNAMO_TABLE=your-table-name
 npm install
 ```
 
-2. Run the software:
+2. Build the TypeScript project:
 
 ```bash
-npm run ts
+npx tsc
 ```
 
-In the main.ts file, you can start by defining a key and a file:
+3. Link the CLI globally to use the `ctg` command system-wide:
+
+```bash
+npm link
+```
+
+## Usage
+
+### 1. Command Line Interface (CLI)
+
+Once linked, you can run `ctg` directly from your terminal.
+
+#### Global Help
+
+```bash
+ctg --help
+```
+
+#### Generate a Key
+
+Generates a new cryptographic key locally.
+
+```bash
+# Default (32 bytes key saved in /keys)
+ctg generate-key
+
+# Custom byte length, key name, and output path
+ctg generate-key -b 64 -n my-secret-key -P /path/to/custom/dir
+```
+
+- **`-b, --bytes <number>`**: Key length in bytes (between 16 and 64, default: `32`).
+- **`-n, --key-name <keyName>`**: Custom name for the key file (without extension).
+- **`-P, --key-path <keyPath>`**: Custom directory path for the key.
+
+#### Upload a File
+
+Encrypts a file locally and uploads the encrypted payload to S3.
+
+```bash
+ctg upload-file -f example.txt -k my-secret-key.pem
+```
+
+- **`-f, --file <fileName>`** _(Required)_: Name of the file inside `/files`.
+- **`-k, --key <keyName>`** _(Required)_: Name of the key inside `/keys`.
+- **`-p, --dir-path <dirPath>`**: Custom path for the file directory.
+- **`-P, --key-path <keyPath>`**: Custom path for the key directory.
+
+#### Download a File
+
+Downloads the encrypted file from S3 and decrypts it locally.
+
+```bash
+ctg download-file -f example.txt -k my-secret-key.pem
+```
+
+- **`-f, --file <fileName>`** _(Required)_: Name of the file to download.
+- **`-k, --key <keyName>`** _(Required)_: Name of the key associated with the file.
+- **`-p, --dir-path <dirPath>`**: Custom output path for the downloaded file.
+- **`-P, --key-path <keyPath>`**: Custom path for the key directory.
+
+#### Delete a File
+
+Deletes the file from S3 and its associated metadata from DynamoDB.
+
+```bash
+ctg delete-file -f example.txt -k my-secret-key.pem
+```
+
+- **`-f, --file <fileName>`** _(Required)_: Name of the file to delete.
+- **`-k, --key <keyName>`** _(Required)_: Key associated with the file.
+- **`-P, --key-path <keyPath>`**: Custom path for the key directory.
+
+#### Delete a Key
+
+Deletes a local key file.
+
+```bash
+ctg delete-key -n my-secret-key.pem
+```
+
+- **`-n, --key-name <keyName>`** _(Required)_: Name of the key file to delete.
+- **`-P, --key-path <keyPath>`**: Custom path for the key directory.
+
+### 2. Programmatic Usage (SDK / TypeScript)
+
+You can also import and use the core classes (`Key` and `File`) directly in your Node.js code.
 
 ```typescript
+import Key from "./keys";
+import File from "./files";
+
 const key = new Key();
 const file = new File();
 ```
