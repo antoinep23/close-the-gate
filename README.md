@@ -147,13 +147,13 @@ const bytes = 32; // must be between 16 and 64 bytes
 key.generate(bytes);
 ```
 
-If you want to retrieve an existing key, retrieve it via the .retrieve("key_name") method (the key need to be placed in the /keys folder at the root of the folder)
+If you want to retrieve an existing key, retrieve it via the .retrieve("key_name") method (the key need to be placed in the /keys folder at the root of the folder or you need to declare a specific path by adding it as a string in a second argument)
 
 ```typescript
 key.retrieve("010c0295-4c46-4b70-8768-b1c4c461f72f.pem");
 ```
 
-You can start working with your files (located in the /files folder at the root of the folder)
+You can start working with your files (located in the /files folder at the root of the folder or you need to declare a specific path by adding it as a string in a second argument)
 
 ```typescript
 file.upload("example.txt", key);
@@ -161,4 +161,4 @@ file.download("example.txt", key);
 file.delete("example.txt", key);
 ```
 
-You always have to pass the fileName as the first parameter and the key object as the second parameter. Don't forget to call key.retrieve("key_name.pem") before you download or delete a file associated with this relevant key.
+You always have to pass the fileName as the first parameter and the key object as the second parameter. Don't forget to call key.retrieve("key_name.pem") before you download or delete a file associated with this relevant key. You can also add a third parameter to define a custom file path for the upload and download methods.
