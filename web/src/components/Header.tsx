@@ -1,4 +1,4 @@
-import { AiOutlineSearch } from 'react-icons/ai';
+import { AiOutlineSearch, AiOutlineSetting } from 'react-icons/ai';
 import { HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi';
 
 interface HeaderProps {
@@ -6,9 +6,10 @@ interface HeaderProps {
   onViewModeChange: (mode: 'grid' | 'list') => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSettingsOpen: () => void;
 }
 
-export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange }: HeaderProps) {
+export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange, onSettingsOpen }: HeaderProps) {
   return (
     <header className="h-16 border-b border-gray-200 flex items-center px-4 gap-4 bg-white">
       <div className="flex items-center gap-2">
@@ -46,6 +47,16 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
           aria-label="List view"
         >
           <HiOutlineViewList className="w-5 h-5" />
+        </button>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        <button
+          onClick={onSettingsOpen}
+          className="p-2 rounded-full text-gray-500 hover:bg-gray-100 cursor-pointer transition-colors"
+          aria-label="Settings"
+        >
+          <AiOutlineSetting className="w-5 h-5" />
         </button>
       </div>
     </header>

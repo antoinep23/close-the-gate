@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
+import { SettingsModal } from './components/SettingsModal';
 import { useFiles } from './hooks/useFiles';
+import { useSettings } from './hooks/useSettings';
 import { getFileCategory } from './utils/fileIcons';
 import type { FileCategory } from './utils/fileIcons';
 
@@ -20,13 +22,14 @@ function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeSection, setActiveSection] = useState('my-drive');
   const [searchQuery, setSearchQuery] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { files, loading, error } = useFiles();
+  const { settings, saveSettings } = useSettings();
 
   let filteredFiles = files.filter((file) =>
     file.fileName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Apply category filter
   if (activeSection.startsWith('category-')) {
     const category = activeSection.replace('category-', '') as FileCategory;
     filteredFiles = filteredFiles.filter((file) => getFileCategory(file.fileName) === category);
@@ -43,6 +46,7 @@ function App() {
         onViewModeChange={setViewMode}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onSettingsOpen={() => setSettingsOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} />
@@ -66,6 +70,12 @@ function App() {
           )}
         </main>
       </div>
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onSettingsChange={saveSettings}
+      />
     </div>
   );
 }

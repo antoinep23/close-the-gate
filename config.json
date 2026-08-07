@@ -1,0 +1,5 @@
+{
+  "keysPath": "./keys",
+  "filesPath": "./files",
+  "downloadPath": "./download"
+}
