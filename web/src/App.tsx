@@ -27,11 +27,8 @@ function App() {
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-800">
-              {activeSection === 'my-drive' && 'My Drive'}
-              {activeSection === 'shared' && 'Shared with me'}
-              {activeSection === 'recent' && 'Recent'}
+              {activeSection === 'my-drive' && 'All Files'}
               {activeSection === 'starred' && 'Starred'}
-              {activeSection === 'trash' && 'Trash'}
             </h2>
             {error && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
