@@ -6,6 +6,7 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import { DynamoDBClient, ScanCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
+import downloadRouter from './download';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const configPath = path.resolve(__dirname, '../../config.json');
@@ -41,6 +42,61 @@ app.put('/api/settings', (req, res) => {
   }
 });
 
+// --- Keys listing endpoint ---
+
+app.get('/api/keys', (_req, res) => {
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    if (!fs.existsSync(keysDir)) {
+      res.json([]);
+      return;
+    }
+
+    const files = fs.readdirSync(keysDir).filter((f) => f.endsWith('.pem'));
+    res.json(files);
+  } catch (err) {
+    console.error('Keys listing error:', err);
+    res.status(500).json({ error: 'Failed to list keys' });
+  }
+});
+
+// --- Downloaded files listing endpoint ---
+
+app.get('/api/downloaded', (_req, res) => {
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const downloadDir = path.isAbsolute(settings.downloadPath)
+      ? settings.downloadPath
+      : path.resolve(projectRoot, settings.downloadPath);
+
+    if (!fs.existsSync(downloadDir)) {
+      res.json([]);
+      return;
+    }
+
+    const files = fs.readdirSync(downloadDir)
+      .filter((f) => !f.startsWith('.'))
+      .map((f) => {
+        const stat = fs.statSync(path.join(downloadDir, f));
+        return { fileName: f, size: stat.size, downloadedAt: stat.mtimeMs };
+      });
+
+    res.json(files);
+  } catch (err) {
+    console.error('Downloaded listing error:', err);
+    res.status(500).json({ error: 'Failed to list downloaded files' });
+  }
+});
+
+// --- Download endpoint (uses core Key/File classes) ---
+app.use('/api', downloadRouter);
+
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 const tableName = process.env.DYNAMO_TABLE!;
 
@@ -57,6 +113,7 @@ app.get('/api/files', async (_req, res) => {
         size: Number(record.size),
         uploadDate: record.uploadDate,
         isStarred: Boolean(record.isStarred),
+        keyName: record.keyName
       };
     });
 

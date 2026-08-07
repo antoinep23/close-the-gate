@@ -147,16 +147,16 @@ export default class File {
     }
 
     private async writeToDynamoDB() : Promise<string> {
-        if (!this.fileName || !this.iv || !this.buffer) {
-            throw new Error("Can not write to DynamoDB as the file name, iv or buffer are missing")
+        if (!this.fileName || !this.buffer) {
+            throw new Error("Can not write to DynamoDB as the file name or buffer are missing")
         }
 
         const metadata: FileMetadata = {
             fileName: this.fileName!,
-            iv: this.iv!,
             size: this.buffer!.length,
             uploadDate: new Date().toISOString(),
             isStarred: this.isStarred,
+            keyName: this.key?.id + ".pem" || "unknown",
         };
 
         try {

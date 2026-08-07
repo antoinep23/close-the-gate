@@ -1,4 +1,4 @@
-import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip } from 'react-icons/ai';
+import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload } from 'react-icons/ai';
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
 import type { FileCategory } from '../utils/fileIcons';
@@ -7,11 +7,13 @@ interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   files: FileItem[];
+  keys: string[];
 }
 
 const navItems = [
   { id: 'my-drive', label: 'All Files', icon: HiOutlineFolderOpen },
   { id: 'starred', label: 'Starred', icon: AiOutlineStar },
+  { id: 'downloaded', label: 'Downloaded', icon: AiOutlineDownload },
 ];
 
 const categoryItems: { id: FileCategory; label: string; icon: typeof AiOutlineFileImage }[] = [
@@ -29,7 +31,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-export function Sidebar({ activeSection, onSectionChange, files }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, files, keys }: SidebarProps) {
   const totalStorageSize = formatSize(files.reduce((acc, f) => acc + f.size, 0));
   return (
     <aside className="w-56 bg-gray-50 border-r border-gray-200 h-full flex flex-col">
@@ -84,6 +86,25 @@ export function Sidebar({ activeSection, onSectionChange, files }: SidebarProps)
             </button>
           );
         })}
+
+        <div className="mt-4 mb-2 px-4">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Keys</span>
+        </div>
+
+        {keys.length === 0 ? (
+          <p className="px-4 text-xs text-gray-400 italic">No keys found</p>
+        ) : (
+          keys.map((keyName) => (
+            <div
+              key={keyName}
+              className="flex items-center gap-2 px-4 py-1.5 text-sm text-gray-600 truncate"
+              title={keyName}
+            >
+              <AiOutlineKey className="w-4 h-4 flex-shrink-0 text-amber-500" />
+              <span className="truncate">{keyName}</span>
+            </div>
+          ))
+        )}
       </nav>
 
       <div className="p-4 border-t border-gray-200">

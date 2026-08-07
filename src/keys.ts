@@ -82,6 +82,8 @@ export default class Key {
     public retrieve(keyName: string, customPath?: string): KeyObject | Error {
         if (customPath) this.customPath = customPath;
         this.configureDirPath();
+
+        this.id = keyName.replace(/\.pem$/, '');
         
         try {
             const path = join(this.path as string, keyName);

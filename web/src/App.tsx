@@ -1,16 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
 import { SettingsModal } from './components/SettingsModal';
+import { ToastContainer } from './components/Toast';
+import type { ToastData } from './components/Toast';
 import { useFiles } from './hooks/useFiles';
 import { useSettings } from './hooks/useSettings';
+import { useKeys } from './hooks/useKeys';
 import { getFileCategory } from './utils/fileIcons';
 import type { FileCategory } from './utils/fileIcons';
+import type { FileItem } from './data/mockFiles';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
   if (section === 'starred') return 'Starred';
+  if (section === 'downloaded') return 'Downloaded';
   if (section.startsWith('category-')) {
     const cat = section.replace('category-', '');
     return cat.charAt(0).toUpperCase() + cat.slice(1);
@@ -23,20 +28,77 @@ function App() {
   const [activeSection, setActiveSection] = useState('my-drive');
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+  const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
   const { files, loading, error } = useFiles();
   const { settings, saveSettings } = useSettings();
+  const { keys } = useKeys();
 
-  let filteredFiles = files.filter((file) =>
-    file.fileName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const addToast = useCallback((type: 'success' | 'error', message: string) => {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, type, message }]);
+  }, []);
 
-  if (activeSection.startsWith('category-')) {
-    const category = activeSection.replace('category-', '') as FileCategory;
-    filteredFiles = filteredFiles.filter((file) => getFileCategory(file.fileName) === category);
-  }
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
-  if (activeSection === 'starred') {
-    filteredFiles = filteredFiles.filter((file) => file.isStarred);
+  // Fetch downloaded files when section is active or after a download
+  const fetchDownloaded = useCallback(async () => {
+    try {
+      const res = await fetch('/api/downloaded');
+      if (!res.ok) return;
+      const data = await res.json();
+      setDownloadedFiles(
+        data.map((f: { fileName: string; size: number; downloadedAt: number }) => ({
+          fileName: f.fileName,
+          size: f.size,
+          uploadDate: new Date(f.downloadedAt).toISOString(),
+          isStarred: false,
+          keyName: '',
+        }))
+      );
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === 'downloaded') {
+      fetchDownloaded();
+    }
+  }, [activeSection, fetchDownloaded]);
+
+  const onDownloadSuccess = useCallback((fileName: string) => {
+    addToast('success', `Downloaded "${fileName}" successfully`);
+    fetchDownloaded();
+  }, [addToast, fetchDownloaded]);
+
+  const onDownloadError = useCallback((fileName: string, err: string) => {
+    addToast('error', `Failed to download "${fileName}": ${err}`);
+  }, [addToast]);
+
+  let displayFiles: FileItem[];
+
+  if (activeSection === 'downloaded') {
+    displayFiles = downloadedFiles.filter((file) =>
+      file.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  } else {
+    let filteredFiles = files.filter((file) =>
+      file.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (activeSection.startsWith('category-')) {
+      const category = activeSection.replace('category-', '') as FileCategory;
+      filteredFiles = filteredFiles.filter((file) => getFileCategory(file.fileName) === category);
+    }
+
+    if (activeSection === 'starred') {
+      filteredFiles = filteredFiles.filter((file) => file.isStarred);
+    }
+
+    displayFiles = filteredFiles;
   }
 
   return (
@@ -49,7 +111,7 @@ function App() {
         onSettingsOpen={() => setSettingsOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} />
+        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} keys={keys} />
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-800">
@@ -66,7 +128,13 @@ function App() {
               <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
           ) : (
-            <FileGrid files={filteredFiles} viewMode={viewMode} />
+            <FileGrid
+              files={displayFiles}
+              viewMode={viewMode}
+              onDownloadSuccess={onDownloadSuccess}
+              onDownloadError={onDownloadError}
+              hideDownload={activeSection === 'downloaded'}
+            />
           )}
         </main>
       </div>
@@ -76,6 +144,7 @@ function App() {
         settings={settings}
         onSettingsChange={saveSettings}
       />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

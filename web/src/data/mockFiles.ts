@@ -3,4 +3,5 @@ export interface FileItem {
   size: number;
   uploadDate: string;
   isStarred: boolean;
+  keyName: string;
 }

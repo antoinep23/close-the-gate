@@ -1,18 +1,54 @@
+import { useState } from 'react';
+import { AiOutlineDownload, AiOutlineLoading3Quarters } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
+import { downloadFile } from '../services/api';
 
 interface FileCardProps {
   file: FileItem;
+  onDownloadSuccess?: (fileName: string) => void;
+  onDownloadError?: (fileName: string, error: string) => void;
+  hideDownload?: boolean;
 }
 
-export function FileCard({ file }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload(e: React.MouseEvent) {
+    e.stopPropagation();
+    setDownloading(true);
+
+    const result = await downloadFile(file.fileName, file.keyName);
+
+    setDownloading(false);
+    if (result.success) {
+      onDownloadSuccess?.(file.fileName);
+    } else {
+      onDownloadError?.(file.fileName, result.error || 'Unknown error');
+    }
+  }
 
   return (
-    <div className="group border border-gray-200 rounded-xl p-3 hover:bg-gray-50 hover:border-gray-300 cursor-pointer transition-all">
+    <div className="group relative border border-gray-200 rounded-xl p-3 hover:bg-gray-50 hover:border-gray-300 cursor-pointer transition-all">
       <div className="flex items-center gap-3">
         <Icon className={`w-6 h-6 flex-shrink-0 ${color}`} />
-        <span className="text-sm text-gray-800 truncate">{file.fileName}</span>
+        <span className="text-sm text-gray-800 truncate flex-1">{file.fileName}</span>
+        {!hideDownload && (
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+            aria-label={`Download ${file.fileName}`}
+            title="Download"
+          >
+            {downloading ? (
+              <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
+            ) : (
+              <AiOutlineDownload className="w-4 h-4 text-gray-500" />
+            )}
+          </button>
+        )}
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
         <span>{formatDate(file.uploadDate)}</span>
