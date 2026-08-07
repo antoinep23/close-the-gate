@@ -31,6 +31,7 @@ app.get('/api/files', async (_req, res) => {
         fileName: record.fileName,
         size: Number(record.size),
         uploadDate: record.uploadDate,
+        isStarred: Boolean(record.isStarred),
       };
     });
 

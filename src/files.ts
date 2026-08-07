@@ -12,6 +12,7 @@ export default class File {
     public customPath: string | null;
     private fileName: string | null;
     private hashName: string | null;
+    private isStarred: boolean;
     private buffer: Buffer | null;
     private key: Key | null;
     private iv: string | null;
@@ -25,6 +26,7 @@ export default class File {
         this.customPath = null;
         this.fileName = null;
         this.hashName = null;
+        this.isStarred = false;
         this.buffer = null;
         this.key = null;
         this.iv = null;
@@ -34,10 +36,11 @@ export default class File {
         this.dynamoTableName = process.env.DYNAMO_TABLE!;
     }
 
-    public async upload(fileName: string, key: Key, customPath?: string): Promise<string> {
+    public async upload(fileName: string, key: Key, customPath?: string, isStarred?: boolean): Promise<string> {
         this.key = key;
         this.fileName = fileName;
-        
+        this.isStarred = isStarred || false;
+
         if (customPath) this.customPath = customPath;
         this.configureDirPath("files");
         const path = join(this.localPath as string, fileName);
@@ -153,6 +156,7 @@ export default class File {
             iv: this.iv!,
             size: this.buffer!.length,
             uploadDate: new Date().toISOString(),
+            isStarred: this.isStarred,
         };
 
         try {

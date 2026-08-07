@@ -3,4 +3,5 @@ export interface FileMetadata {
     iv: string;
     size: number;
     uploadDate: string;
+    isStarred: boolean;
 }

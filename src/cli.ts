@@ -74,11 +74,13 @@ program
   .requiredOption("-k, --key <keyName>", "Name of the key file to use for upload, located inside the /keys folder")
   .option("-p, --dir-path <dirPath>", "Custom path of the file directory (default is /files at the root of the process)")
   .option("-P, --key-path <keyPath>", "Custom path for the key (default is /keys at the root of the process)")
+  .option("-s, --starred", "Mark the file as starred")
   .action(async (options) => {
     const file = new File();
     const key = new Key();
     const customFilePath = options.dirPath ? options.dirPath : null;
     const customKeyPath = options.keyPath ? options.keyPath : null;
+    const isStarred = options.starred ? true : false;
 
     try {
       const retrieved = key.retrieve(options.key, customKeyPath);
@@ -86,7 +88,7 @@ program
         throw retrieved;
       }
 
-      const uploaded = await file.upload(options.file, key, customFilePath);
+      const uploaded = await file.upload(options.file, key, customFilePath, isStarred);
 
       console.log(uploaded);
     } catch(e: unknown) {

@@ -32,6 +32,10 @@ function App() {
     filteredFiles = filteredFiles.filter((file) => getFileCategory(file.fileName) === category);
   }
 
+  if (activeSection === 'starred') {
+    filteredFiles = filteredFiles.filter((file) => file.isStarred);
+  }
+
   return (
     <div className="h-screen flex flex-col bg-white">
       <Header
