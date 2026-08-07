@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { mockFiles } from '../data/mockFiles';
 import type { FileItem } from '../data/mockFiles';
 
 export function useFiles() {
@@ -16,9 +15,9 @@ export function useFiles() {
         setFiles(data);
         setError(null);
       } catch (err) {
-        console.warn('API unavailable, using mock data:', err);
-        setFiles(mockFiles);
-        setError('Using offline data');
+        console.warn('API unavailable: ', err);
+        setFiles([]);
+        setError('Failed to fetch files. Please try again later.');
       } finally {
         setLoading(false);
       }
