@@ -12,10 +12,10 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
   return (
     <header className="h-16 border-b border-gray-200 flex items-center px-4 gap-4 bg-white">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+        {/* <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-sm">G</span>
-        </div>
-        <h1 className="text-lg font-medium text-gray-800">Gate Drive</h1>
+        </div> */}
+        <h1 className="text-lg font-medium text-gray-800">Close the Gate Drive</h1>
       </div>
 
       <div className="flex-1 max-w-2xl mx-auto">

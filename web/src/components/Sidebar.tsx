@@ -1,9 +1,12 @@
 import { AiOutlineCloud, AiOutlineClockCircle, AiOutlineStar, AiOutlineDelete } from 'react-icons/ai';
 import { HiOutlineFolderOpen } from 'react-icons/hi';
+import { getTotalStorageSize } from '../utils/storage';
+import type { FileItem } from '../data/mockFiles';
 
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  files: FileItem[];
 }
 
 const navItems = [
@@ -14,7 +17,9 @@ const navItems = [
   { id: 'trash', label: 'Trash', icon: AiOutlineDelete },
 ];
 
-export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, files }: SidebarProps) {
+  const totalStorageSize = getTotalStorageSize(files);
+  
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 h-full flex flex-col">
       <div className="p-4">
@@ -48,11 +53,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500 mb-2">Storage</div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div className="bg-blue-500 h-2 rounded-full" style={{ width: '35%' }}></div>
-        </div>
-        <div className="text-xs text-gray-500 mt-1">3.5 GB of 10 GB used</div>
+        <div className="text-xs text-gray-500 text-center">Total Storage: {totalStorageSize}</div>
       </div>
     </aside>
   );

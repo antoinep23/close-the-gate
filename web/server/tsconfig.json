@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "target": "ES2020",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true
+  },
+  "include": ["./**/*.ts"]
+}

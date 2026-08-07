@@ -8,8 +8,13 @@ interface FileGridProps {
 }
 
 export function FileGrid({ files, viewMode }: FileGridProps) {
-  const folders = files.filter((f) => f.type === 'folder');
-  const regularFiles = files.filter((f) => f.type === 'file');
+  if (files.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400">
+        <p>No files found</p>
+      </div>
+    );
+  }
 
   if (viewMode === 'list') {
     return (
@@ -18,16 +23,13 @@ export function FileGrid({ files, viewMode }: FileGridProps) {
           <thead>
             <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
               <th className="pb-2 font-medium">Name</th>
-              <th className="pb-2 font-medium">Last modified</th>
-              <th className="pb-2 font-medium">File size</th>
+              <th className="pb-2 font-medium">Upload date</th>
+              <th className="pb-2 font-medium">Size</th>
             </tr>
           </thead>
           <tbody>
-            {folders.map((file) => (
-              <FileRow key={file.id} file={file} />
-            ))}
-            {regularFiles.map((file) => (
-              <FileRow key={file.id} file={file} />
+            {files.map((file) => (
+              <FileRow key={file.fileName} file={file} />
             ))}
           </tbody>
         </table>
@@ -37,26 +39,11 @@ export function FileGrid({ files, viewMode }: FileGridProps) {
 
   return (
     <div className="p-6">
-      {folders.length > 0 && (
-        <>
-          <h2 className="text-sm font-medium text-gray-700 mb-3">Folders</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
-            {folders.map((file) => (
-              <FileCard key={file.id} file={file} />
-            ))}
-          </div>
-        </>
-      )}
-      {regularFiles.length > 0 && (
-        <>
-          <h2 className="text-sm font-medium text-gray-700 mb-3">Files</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {regularFiles.map((file) => (
-              <FileCard key={file.id} file={file} />
-            ))}
-          </div>
-        </>
-      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {files.map((file) => (
+          <FileCard key={file.fileName} file={file} />
+        ))}
+      </div>
     </div>
   );
 }
