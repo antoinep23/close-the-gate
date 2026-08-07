@@ -1,6 +1,7 @@
-import { AiOutlineStar } from 'react-icons/ai';
+import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip } from 'react-icons/ai';
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
+import type { FileCategory } from '../utils/fileIcons';
 
 interface SidebarProps {
   activeSection: string;
@@ -11,6 +12,14 @@ interface SidebarProps {
 const navItems = [
   { id: 'my-drive', label: 'All Files', icon: HiOutlineFolderOpen },
   { id: 'starred', label: 'Starred', icon: AiOutlineStar },
+];
+
+const categoryItems: { id: FileCategory; label: string; icon: typeof AiOutlineFileImage }[] = [
+  { id: 'images', label: 'Images', icon: AiOutlineFileImage },
+  { id: 'documents', label: 'Documents', icon: AiOutlineFileText },
+  { id: 'videos', label: 'Videos', icon: AiOutlinePlayCircle },
+  { id: 'code', label: 'Code', icon: AiOutlineCode },
+  { id: 'archives', label: 'Archives', icon: AiOutlineFileZip },
 ];
 
 function formatSize(bytes: number): string {
@@ -33,7 +42,7 @@ export function Sidebar({ activeSection, onSectionChange, files }: SidebarProps)
         </button>
       </div>
 
-      <nav className="flex-1 px-3">
+      <nav className="flex-1 px-3 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -41,6 +50,29 @@ export function Sidebar({ activeSection, onSectionChange, files }: SidebarProps)
             <button
               key={item.id}
               onClick={() => onSectionChange(item.id)}
+              className={`flex items-center gap-3 w-full px-4 py-2 rounded-full text-sm mb-1 cursor-pointer transition-colors ${
+                isActive
+                  ? 'bg-blue-100 text-blue-800 font-medium'
+                  : 'text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+
+        <div className="mt-4 mb-2 px-4">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Categories</span>
+        </div>
+
+        {categoryItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeSection === `category-${item.id}`;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSectionChange(`category-${item.id}`)}
               className={`flex items-center gap-3 w-full px-4 py-2 rounded-full text-sm mb-1 cursor-pointer transition-colors ${
                 isActive
                   ? 'bg-blue-100 text-blue-800 font-medium'

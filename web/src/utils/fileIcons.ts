@@ -67,6 +67,30 @@ const extensionMap: Record<string, FileIconResult> = {
 
 const defaultIcon: FileIconResult = { icon: AiOutlineFile, color: 'text-gray-500' };
 
+export type FileCategory = 'images' | 'documents' | 'videos' | 'code' | 'archives' | 'other';
+
+const categoryByExtension: Record<string, FileCategory> = {
+  // Images
+  png: 'images', jpg: 'images', jpeg: 'images', gif: 'images', svg: 'images', webp: 'images',
+  // Documents
+  pdf: 'documents', xlsx: 'documents', xls: 'documents', csv: 'documents',
+  pptx: 'documents', ppt: 'documents', md: 'documents', txt: 'documents',
+  doc: 'documents', docx: 'documents', log: 'documents',
+  // Videos/Audio
+  mp4: 'videos', mov: 'videos', avi: 'videos', mp3: 'videos', wav: 'videos',
+  // Code
+  json: 'code', js: 'code', ts: 'code', tsx: 'code', jsx: 'code',
+  py: 'code', sh: 'code', yaml: 'code', yml: 'code', toml: 'code',
+  html: 'code', css: 'code',
+  // Archives
+  zip: 'archives', tar: 'archives', gz: 'archives', rar: 'archives',
+};
+
+export function getFileCategory(fileName: string): FileCategory {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return categoryByExtension[ext] || 'other';
+}
+
 export function getFileIcon(fileName: string): FileIconResult {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   return extensionMap[ext] || defaultIcon;

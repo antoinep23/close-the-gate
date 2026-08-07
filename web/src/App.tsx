@@ -3,6 +3,18 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
 import { useFiles } from './hooks/useFiles';
+import { getFileCategory } from './utils/fileIcons';
+import type { FileCategory } from './utils/fileIcons';
+
+function getSectionTitle(section: string): string {
+  if (section === 'my-drive') return 'All Files';
+  if (section === 'starred') return 'Starred';
+  if (section.startsWith('category-')) {
+    const cat = section.replace('category-', '');
+    return cat.charAt(0).toUpperCase() + cat.slice(1);
+  }
+  return '';
+}
 
 function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -10,9 +22,15 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const { files, loading, error } = useFiles();
 
-  const filteredFiles = files.filter((file) =>
+  let filteredFiles = files.filter((file) =>
     file.fileName.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Apply category filter
+  if (activeSection.startsWith('category-')) {
+    const category = activeSection.replace('category-', '') as FileCategory;
+    filteredFiles = filteredFiles.filter((file) => getFileCategory(file.fileName) === category);
+  }
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -27,8 +45,7 @@ function App() {
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-800">
-              {activeSection === 'my-drive' && 'All Files'}
-              {activeSection === 'starred' && 'Starred'}
+              {getSectionTitle(activeSection)}
             </h2>
             {error && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
