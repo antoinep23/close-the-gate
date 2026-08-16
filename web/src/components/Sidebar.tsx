@@ -2,12 +2,14 @@ import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCirc
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
 import type { FileCategory } from '../utils/fileIcons';
+import { getS3PricePerGb } from '../data/s3Pricing';
 
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   files: FileItem[];
   keys: string[];
+  region: string;
 }
 
 const navItems = [
@@ -31,8 +33,19 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-export function Sidebar({ activeSection, onSectionChange, files, keys }: SidebarProps) {
-  const totalStorageSize = formatSize(files.reduce((acc, f) => acc + f.size, 0));
+// S3 Standard pricing based on configured region
+function estimateMonthlyCost(totalBytes: number, region: string): string {
+  const gb = totalBytes / (1024 * 1024 * 1024);
+  const pricePerGb = getS3PricePerGb(region);
+  const cost = gb * pricePerGb;
+  if (cost < 0.01) return '< $0.01';
+  return `~$${cost.toFixed(2)}`;
+}
+
+export function Sidebar({ activeSection, onSectionChange, files, keys, region }: SidebarProps) {
+  const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
+  const totalStorageSize = formatSize(totalBytes);
+  const monthlyCost = estimateMonthlyCost(totalBytes, region);
   return (
     <aside className="w-56 bg-gray-50 border-r border-gray-200 h-full flex flex-col">
       <div className="p-4">
@@ -109,6 +122,7 @@ export function Sidebar({ activeSection, onSectionChange, files, keys }: Sidebar
 
       <div className="p-4 border-t border-gray-200">
         <div className="text-xs text-gray-500 text-center">Total Storage: {totalStorageSize}</div>
+        <div className="text-xs text-gray-400 text-center mt-1">Est. cost: {monthlyCost}/mo</div>
       </div>
     </aside>
   );

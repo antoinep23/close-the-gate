@@ -4,6 +4,7 @@ export interface PathSettings {
   keysPath: string;
   filesPath: string;
   downloadPath: string;
+  region: string;
 }
 
 interface SettingsModalProps {

@@ -26,9 +26,12 @@ app.use(express.json());
 app.get('/api/settings', (_req, res) => {
   try {
     const data = fs.readFileSync(configPath, 'utf-8');
-    res.json(JSON.parse(data));
+    const settings = JSON.parse(data);
+    // Include the region so the front can estimate costs
+    settings.region = process.env.AWS_REGION || 'eu-west-1';
+    res.json(settings);
   } catch {
-    res.json({ keysPath: './keys', filesPath: './files', downloadPath: './download' });
+    res.json({ keysPath: './keys', filesPath: './files', downloadPath: './download', region: process.env.AWS_REGION || 'eu-west-1' });
   }
 });
 

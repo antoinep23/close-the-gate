@@ -5,6 +5,7 @@ const DEFAULT_SETTINGS: PathSettings = {
   keysPath: './keys',
   filesPath: './files',
   downloadPath: './download',
+  region: 'eu-west-1',
 };
 
 export function useSettings() {
