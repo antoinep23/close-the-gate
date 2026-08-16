@@ -11,6 +11,7 @@ import { useKeys } from './hooks/useKeys';
 import { getFileCategory } from './utils/fileIcons';
 import type { FileCategory } from './utils/fileIcons';
 import type { FileItem } from './data/mockFiles';
+import { openFile } from './services/api';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
@@ -78,6 +79,13 @@ function App() {
     addToast('error', `Failed to download "${fileName}": ${err}`);
   }, [addToast]);
 
+  const onFileOpen = useCallback(async (fileName: string) => {
+    const result = await openFile(fileName);
+    if (!result.success) {
+      addToast('error', `Failed to open "${fileName}": ${result.error}`);
+    }
+  }, [addToast]);
+
   let displayFiles: FileItem[];
 
   if (activeSection === 'downloaded') {
@@ -133,6 +141,7 @@ function App() {
               viewMode={viewMode}
               onDownloadSuccess={onDownloadSuccess}
               onDownloadError={onDownloadError}
+              onFileOpen={activeSection === 'downloaded' ? onFileOpen : undefined}
               hideDownload={activeSection === 'downloaded'}
             />
           )}

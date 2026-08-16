@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import { execSync } from 'child_process';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -91,6 +92,40 @@ app.get('/api/downloaded', (_req, res) => {
   } catch (err) {
     console.error('Downloaded listing error:', err);
     res.status(500).json({ error: 'Failed to list downloaded files' });
+  }
+});
+
+// --- Open file endpoint ---
+
+app.post('/api/open', (req, res) => {
+  const { fileName } = req.body;
+
+  if (!fileName) {
+    res.status(400).json({ error: 'fileName is required' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const downloadDir = path.isAbsolute(settings.downloadPath)
+      ? settings.downloadPath
+      : path.resolve(projectRoot, settings.downloadPath);
+
+    const filePath = path.join(downloadDir, fileName);
+
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: 'File not found in download directory' });
+      return;
+    }
+
+    execSync(`open "${filePath}"`);
+
+    res.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Open file error:', message);
+    res.status(500).json({ error: message });
   }
 });
 

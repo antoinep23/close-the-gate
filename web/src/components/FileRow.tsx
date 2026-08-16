@@ -8,10 +8,11 @@ interface FileRowProps {
   file: FileItem;
   onDownloadSuccess?: (fileName: string) => void;
   onDownloadError?: (fileName: string, error: string) => void;
+  onFileOpen?: (fileName: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
 
@@ -29,8 +30,14 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, hideDownload
     }
   }
 
+  function handleClick() {
+    if (onFileOpen) {
+      onFileOpen(file.fileName);
+    }
+  }
+
   return (
-    <tr className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+    <tr onClick={handleClick} className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
       <td className="py-2.5">
         <div className="flex items-center gap-3">
           <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />

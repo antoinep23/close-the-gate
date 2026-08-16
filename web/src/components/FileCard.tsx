@@ -8,10 +8,11 @@ interface FileCardProps {
   file: FileItem;
   onDownloadSuccess?: (fileName: string) => void;
   onDownloadError?: (fileName: string, error: string) => void;
+  onFileOpen?: (fileName: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, hideDownload }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
 
@@ -29,8 +30,17 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, hideDownloa
     }
   }
 
+  function handleClick() {
+    if (onFileOpen) {
+      onFileOpen(file.fileName);
+    }
+  }
+
   return (
-    <div className="group relative border border-gray-200 rounded-xl p-3 hover:bg-gray-50 hover:border-gray-300 cursor-pointer transition-all">
+    <div
+      onClick={handleClick}
+      className="group relative border border-gray-200 rounded-xl p-3 hover:bg-gray-50 hover:border-gray-300 cursor-pointer transition-all"
+    >
       <div className="flex items-center gap-3">
         <Icon className={`w-6 h-6 flex-shrink-0 ${color}`} />
         <span className="text-sm text-gray-800 truncate flex-1">{file.fileName}</span>

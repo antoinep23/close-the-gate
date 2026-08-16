@@ -7,10 +7,11 @@ interface FileGridProps {
   viewMode: 'grid' | 'list';
   onDownloadSuccess?: (fileName: string) => void;
   onDownloadError?: (fileName: string, error: string) => void;
+  onFileOpen?: (fileName: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, hideDownload }: FileGridProps) {
+export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, hideDownload }: FileGridProps) {
   if (files.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
@@ -38,6 +39,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                 file={file}
                 onDownloadSuccess={onDownloadSuccess}
                 onDownloadError={onDownloadError}
+                onFileOpen={onFileOpen}
                 hideDownload={hideDownload}
               />
             ))}
@@ -56,6 +58,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
             file={file}
             onDownloadSuccess={onDownloadSuccess}
             onDownloadError={onDownloadError}
+            onFileOpen={onFileOpen}
             hideDownload={hideDownload}
           />
         ))}
