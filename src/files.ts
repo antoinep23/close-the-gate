@@ -15,7 +15,6 @@ export default class File {
     private isStarred: boolean;
     private buffer: Buffer | null;
     private key: Key | null;
-    private iv: string | null;
     private s3Client: S3Client;
     private bucketName: string;
     private dynamoDBClient: DynamoDBClient;
@@ -29,7 +28,6 @@ export default class File {
         this.isStarred = false;
         this.buffer = null;
         this.key = null;
-        this.iv = null;
         this.s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
         this.bucketName = process.env.S3_BUCKET!;
         this.dynamoDBClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -96,7 +94,6 @@ export default class File {
         }
 
         const iv = randomBytes(12);
-        this.iv = iv.toString('base64');
         const cipher = createCipheriv('aes-256-gcm', keyMaterial, iv);
 
         const encryptedFile = Buffer.concat([
