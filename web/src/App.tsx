@@ -128,6 +128,13 @@ function App() {
     refetchKeys();
   }, [addToast, refetchKeys]);
 
+  const handleSaveSettings = useCallback(async (newSettings: typeof settings) => {
+    await saveSettings(newSettings);
+    refetch();
+    refetchKeys();
+    fetchDownloaded();
+  }, [saveSettings, refetch, refetchKeys, fetchDownloaded]);
+
   const onKeyGenError = useCallback((err: string) => {
     addToast('error', `Key generation failed: ${err}`);
   }, [addToast]);
@@ -214,7 +221,7 @@ function App() {
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         settings={settings}
-        onSettingsChange={saveSettings}
+        onSettingsChange={handleSaveSettings}
       />
       <UploadModal
         isOpen={uploadOpen}
