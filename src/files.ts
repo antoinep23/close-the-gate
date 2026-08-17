@@ -1,11 +1,14 @@
 import { createCipheriv, randomBytes, createHmac } from "node:crypto";
 import { writeFileSync, mkdirSync, createReadStream } from "node:fs";
 import { join } from "node:path";
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { Upload } from "@aws-sdk/lib-storage";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import Key from "./keys";
 import { FileMetadata } from "./interfaces";
+
+export type ProgressCallback = (phase: string, percent: number) => void;
 
 export default class File {
     public localPath: string | null;
@@ -34,7 +37,7 @@ export default class File {
         this.dynamoTableName = process.env.DYNAMO_TABLE!;
     }
 
-    public async upload(fileName: string, key: Key, customPath?: string, isStarred?: boolean): Promise<string> {
+    public async upload(fileName: string, key: Key, customPath?: string, isStarred?: boolean, onProgress?: ProgressCallback): Promise<string> {
         this.key = key;
         this.fileName = fileName;
         this.isStarred = isStarred || false;
@@ -44,13 +47,19 @@ export default class File {
         const path = join(this.localPath as string, fileName);
         this.localPath = path;
 
+        if (onProgress) onProgress('reading', 0);
         await this.retrieve();
+        if (onProgress) onProgress('reading', 100);
 
+        if (onProgress) onProgress('encrypting', 0);
         const payload = this.encrypt();
+        if (onProgress) onProgress('encrypting', 100);
 
         try {
-            const uploadPath = await this.writeToS3(payload);
+            const uploadPath = await this.writeToS3(payload, onProgress);
+            if (onProgress) onProgress('metadata', 0);
             await this.writeToDynamoDB();
+            if (onProgress) onProgress('metadata', 100);
 
             return uploadPath;
         } catch (e: unknown) {
@@ -122,21 +131,36 @@ export default class File {
             return hash;
         }
 
-    private async writeToS3(payload: Buffer): Promise<string> {
+    private async writeToS3(payload: Buffer, onProgress?: ProgressCallback): Promise<string> {
         if (!this.fileName || !this.bucketName) {
             throw new Error("Can not write to S3 as the names are not correctly passed")
         }
 
         const name = this.signName();
-        const command = new PutObjectCommand({
-            Bucket: this.bucketName,
-            Key: name,
-            Body: payload,
-            ContentType: 'application/octet-stream', 
+        const totalBytes = payload.length;
+
+        const upload = new Upload({
+            client: this.s3Client,
+            params: {
+                Bucket: this.bucketName,
+                Key: name,
+                Body: payload,
+                ContentType: 'application/octet-stream',
+            },
+            // Use 5MB parts for multipart (default)
+            partSize: 5 * 1024 * 1024,
+            queueSize: 4,
+        });
+
+        upload.on("httpUploadProgress", (progress) => {
+            if (onProgress && progress.loaded) {
+                const percent = Math.round((progress.loaded / totalBytes) * 100);
+                onProgress('s3', percent);
+            }
         });
 
         try {
-            await this.s3Client.send(command);
+            await upload.done();
             return "File successfuly uploaded encrypted to the S3 bucket"
         } catch (e: unknown) {
             throw new Error(`Error while uploading to S3: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);

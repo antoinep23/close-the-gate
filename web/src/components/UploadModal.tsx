@@ -14,6 +14,8 @@ export function UploadModal({ isOpen, onClose, keys, onUploadSuccess, onUploadEr
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedKey, setSelectedKey] = useState(keys[0] || '');
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -28,14 +30,21 @@ export function UploadModal({ isOpen, onClose, keys, onUploadSuccess, onUploadEr
     if (!selectedFile || !selectedKey) return;
 
     setUploading(true);
-    const result = await uploadFile(selectedFile, selectedKey);
+    setProgress(0);
+    setPhase('transfer');
+    const result = await uploadFile(selectedFile, selectedKey, (percent, info) => {
+      setProgress(percent);
+      setPhase(info.phase);
+    });
     setUploading(false);
 
     if (result.success) {
       onUploadSuccess(selectedFile.name);
       setSelectedFile(null);
+      setProgress(0);
       onClose();
     } else {
+      setProgress(0);
       onUploadError(selectedFile.name, result.error || 'Unknown error');
     }
   }
@@ -48,6 +57,18 @@ export function UploadModal({ isOpen, onClose, keys, onUploadSuccess, onUploadEr
 
   function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
+  }
+
+  function getPhaseLabel(phase: string): string {
+    switch (phase) {
+      case 'transfer': return 'Transferring file...';
+      case 'reading': return 'Reading file...';
+      case 'encrypting': return 'Encrypting...';
+      case 's3': return 'Uploading to cloud...';
+      case 'metadata': return 'Saving metadata...';
+      case 'complete': return 'Done!';
+      default: return 'Processing...';
+    }
   }
 
   return (
@@ -106,6 +127,24 @@ export function UploadModal({ isOpen, onClose, keys, onUploadSuccess, onUploadEr
             </select>
           )}
         </div>
+
+        {/* Progress bar */}
+        {uploading && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-gray-600">
+                {getPhaseLabel(phase)}
+              </span>
+              <span className="text-xs font-medium text-blue-600">{progress}%</span>
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Upload button */}
         <button

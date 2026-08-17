@@ -3,6 +3,7 @@ import fs from 'fs';
 import { Router } from 'express';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import { randomUUID } from 'crypto';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
 
@@ -44,15 +45,26 @@ const upload = multer({ storage });
 
 const router = Router();
 
+// In-memory progress store for active uploads
+interface UploadProgress {
+  phase: string;
+  percent: number;
+  done: boolean;
+  error?: string;
+}
+
+const progressStore = new Map<string, UploadProgress>();
+
 /**
  * POST /api/upload
  * Multipart form: file (the file to upload), keyName (string)
  *
- * 1. Saves the file to the configured filesPath
- * 2. Encrypts and uploads to S3 using the specified key
+ * 1. Saves the file to the configured filesPath via multer
+ * 2. Returns an uploadId immediately
+ * 3. Starts the encryption + S3 upload in the background with progress tracking
  */
 router.post('/upload', (req, res) => {
-  upload.single('file')(req, res, async (err) => {
+  upload.single('file')(req, res, (err) => {
     if (err) {
       console.error('Multer error:', err);
       res.status(400).json({ error: err.message });
@@ -67,25 +79,76 @@ router.post('/upload', (req, res) => {
       return;
     }
 
+    // Generate a unique upload ID and initialize progress
+    const uploadId = randomUUID();
+    progressStore.set(uploadId, { phase: 'queued', percent: 0, done: false });
+
+    // Respond immediately with the upload ID so the client can subscribe to SSE
+    res.json({ success: true, uploadId });
+
+    // Start the server-side processing in the background
     const settings = getSettings();
     const keysPath = resolveFromRoot(settings.keysPath);
     const filesPath = resolveFromRoot(settings.filesPath);
 
-    try {
-      // Retrieve the key
-      const key = new Key();
-      key.retrieve(keyName, keysPath);
+    (async () => {
+      try {
+        const key = new Key();
+        key.retrieve(keyName, keysPath);
 
-      // Upload (encrypt + S3 + DynamoDB)
-      const file = new File();
-      const result = await file.upload(uploadedFile.originalname, key, filesPath);
+        const file = new File();
+        await file.upload(uploadedFile.originalname, key, filesPath, false, (phase: string, percent: number) => {
+          progressStore.set(uploadId, { phase, percent, done: false });
+        });
 
-      res.json({ success: true, message: result });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error('Upload error:', message);
-      res.status(500).json({ error: message });
+        progressStore.set(uploadId, { phase: 'complete', percent: 100, done: true });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Upload error:', message);
+        progressStore.set(uploadId, { phase: 'error', percent: 0, done: true, error: message });
+      }
+
+      // Clean up progress after 60s
+      setTimeout(() => progressStore.delete(uploadId), 60_000);
+    })();
+  });
+});
+
+/**
+ * GET /api/upload/progress/:id
+ * Server-Sent Events endpoint that streams real-time progress for an upload.
+ */
+router.get('/upload/progress/:id', (req, res) => {
+  const uploadId = req.params.id;
+
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const interval = setInterval(() => {
+    const progress = progressStore.get(uploadId);
+
+    if (!progress) {
+      // Upload ID not found (expired or invalid)
+      res.write(`data: ${JSON.stringify({ phase: 'error', percent: 0, done: true, error: 'Upload not found' })}\n\n`);
+      clearInterval(interval);
+      res.end();
+      return;
     }
+
+    res.write(`data: ${JSON.stringify(progress)}\n\n`);
+
+    if (progress.done) {
+      clearInterval(interval);
+      res.end();
+    }
+  }, 200); // Poll every 200ms for smooth progress updates
+
+  // Clean up on client disconnect
+  req.on('close', () => {
+    clearInterval(interval);
   });
 });
 

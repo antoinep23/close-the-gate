@@ -46,23 +46,122 @@ export async function toggleStar(fileName: string, isStarred: boolean): Promise<
   return { success: true };
 }
 
-export async function uploadFile(file: globalThis.File, keyName: string): Promise<{ success: boolean; error?: string }> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('keyName', keyName);
+export interface UploadProgressInfo {
+  phase: string;
+  percent: number;
+}
 
-  const res = await fetch('/api/upload', {
-    method: 'POST',
-    body: formData,
+/**
+ * Upload a file with real progress tracking across both phases:
+ * - Phase 1 (0-50%): Browser → Server transfer (XHR progress)
+ * - Phase 2 (50-100%): Server-side encryption + S3 upload (SSE progress)
+ */
+export function uploadFile(
+  file: globalThis.File,
+  keyName: string,
+  onProgress?: (percent: number, info: UploadProgressInfo) => void
+): Promise<{ success: boolean; error?: string }> {
+  return new Promise((resolve) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('keyName', keyName);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload');
+
+    // Phase 1: Track network transfer (0% - 50%)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        const percent = Math.round((event.loaded / event.total) * 50);
+        onProgress(percent, { phase: 'transfer', percent });
+      }
+    };
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && data.uploadId) {
+          // Phase 1 complete, start Phase 2: subscribe to SSE for server progress
+          if (onProgress) onProgress(50, { phase: 'transfer', percent: 100 });
+          subscribeToServerProgress(data.uploadId, onProgress, resolve);
+        } else {
+          resolve({ success: false, error: data.error || 'Upload failed' });
+        }
+      } catch {
+        resolve({ success: false, error: 'Invalid server response' });
+      }
+    };
+
+    xhr.onerror = () => {
+      resolve({ success: false, error: 'Network error' });
+    };
+
+    xhr.send(formData);
   });
+}
 
-  const data = await res.json();
+/**
+ * Subscribe to the SSE endpoint for server-side progress (encryption + S3 + metadata).
+ * Maps server progress (0-100%) into the overall range (50-100%).
+ */
+function subscribeToServerProgress(
+  uploadId: string,
+  onProgress: ((percent: number, info: UploadProgressInfo) => void) | undefined,
+  resolve: (result: { success: boolean; error?: string }) => void
+) {
+  const eventSource = new EventSource(`/api/upload/progress/${uploadId}`);
 
-  if (!res.ok) {
-    return { success: false, error: data.error || 'Upload failed' };
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data) as { phase: string; percent: number; done: boolean; error?: string };
+
+      if (data.done) {
+        eventSource.close();
+        if (data.error) {
+          resolve({ success: false, error: data.error });
+        } else {
+          if (onProgress) onProgress(100, { phase: 'complete', percent: 100 });
+          resolve({ success: true });
+        }
+        return;
+      }
+
+      // Map server-side progress into overall 50-100% range
+      if (onProgress) {
+        const serverPercent = mapServerPhaseToPercent(data.phase, data.percent);
+        const overall = 50 + Math.round(serverPercent * 0.5);
+        onProgress(overall, { phase: data.phase, percent: data.percent });
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  };
+
+  eventSource.onerror = () => {
+    eventSource.close();
+    resolve({ success: false, error: 'Lost connection to upload progress' });
+  };
+}
+
+/**
+ * Convert server phase + percent into a linear 0-100 scale representing server-side work.
+ * Phases: reading (0-5%), encrypting (5-15%), s3 (15-95%), metadata (95-100%)
+ */
+function mapServerPhaseToPercent(phase: string, percent: number): number {
+  switch (phase) {
+    case 'reading':
+      return Math.round(percent * 0.05);
+    case 'encrypting':
+      return 5 + Math.round(percent * 0.10);
+    case 's3':
+      return 15 + Math.round(percent * 0.80);
+    case 'metadata':
+      return 95 + Math.round(percent * 0.05);
+    case 'complete':
+      return 100;
+    default:
+      return 0;
   }
-
-  return { success: true };
 }
 
 export async function deleteFile(fileName: string, keyName: string): Promise<{ success: boolean; error?: string }> {

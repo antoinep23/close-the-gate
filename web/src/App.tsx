@@ -28,7 +28,7 @@ function getSectionTitle(section: string): string {
 }
 
 function App() {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [activeSection, setActiveSection] = useState('my-drive');
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);

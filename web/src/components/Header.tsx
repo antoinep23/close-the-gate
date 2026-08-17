@@ -32,15 +32,6 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
 
       <div className="flex items-center gap-1">
         <button
-          onClick={() => onViewModeChange('grid')}
-          className={`p-2 rounded-full transition-colors cursor-pointer ${
-            viewMode === 'grid' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'
-          }`}
-          aria-label="Grid view"
-        >
-          <HiOutlineViewGrid className="w-5 h-5" />
-        </button>
-        <button
           onClick={() => onViewModeChange('list')}
           className={`p-2 rounded-full transition-colors cursor-pointer ${
             viewMode === 'list' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'
@@ -48,6 +39,16 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
           aria-label="List view"
         >
           <HiOutlineViewList className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => onViewModeChange('grid')}
+          className={`p-2 rounded-full transition-colors cursor-pointer ${
+            viewMode === 'grid' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'
+          }`}
+          aria-label="Grid view"
+        >
+          <HiOutlineViewGrid className="w-5 h-5" />
         </button>
 
         <div className="w-px h-6 bg-gray-200 mx-1"></div>
