@@ -148,7 +148,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         title={isLocalDelete ? 'Remove local file' : 'Delete file'}
         message={isLocalDelete
           ? `Remove "${file.fileName}" from local downloads?`
-          : `"${file.fileName}" will be permanently deleted from S3. This cannot be undone.`
+          : `"${file.fileName}" will be permanently deleted from the cloud bucket. This cannot be undone.`
         }
         confirmLabel={isLocalDelete ? 'Remove' : 'Delete'}
         onConfirm={confirmDelete}

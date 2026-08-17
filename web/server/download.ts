@@ -63,7 +63,7 @@ router.post('/download', async (req, res) => {
  * DELETE /api/files/:fileName
  * Body: { keyName: string }
  *
- * Deletes the file from S3 and its metadata from DynamoDB.
+ * Deletes the file from cloud bucket and its metadata from DynamoDB.
  */
 router.delete('/files/:fileName', async (req, res) => {
   const { fileName } = req.params;

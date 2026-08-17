@@ -136,7 +136,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             disabled={deleting}
             className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
             aria-label={`Delete ${file.fileName}`}
-            title={isLocalDelete ? 'Remove from local' : 'Delete from S3'}
+            title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
           >
             {deleting ? (
               <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
@@ -151,7 +151,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         title={isLocalDelete ? 'Remove local file' : 'Delete file'}
         message={isLocalDelete
           ? `Remove "${file.fileName}" from local downloads?`
-          : `"${file.fileName}" will be permanently deleted from S3. This cannot be undone.`
+          : `"${file.fileName}" will be permanently deleted from the cloud bucket. This cannot be undone.`
         }
         confirmLabel={isLocalDelete ? 'Remove' : 'Delete'}
         onConfirm={confirmDelete}

@@ -229,7 +229,7 @@ export default class File {
 
             return `${this.localPath}/${fileName}`;
         } catch (e: unknown) {
-            throw new Error(`Error while downloading from S3 - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
+            throw new Error(`Error while downloading from cloud bucket - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
         }
     }
 

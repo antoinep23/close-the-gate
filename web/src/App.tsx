@@ -97,7 +97,7 @@ function App() {
   }, [updateFileStar]);
 
   const onDeleteSuccess = useCallback((fileName: string) => {
-    addToast('success', `Deleted "${fileName}" from S3`);
+    addToast('success', `Deleted "${fileName}" from cloud bucket`);
     refetch();
   }, [addToast, refetch]);
 
