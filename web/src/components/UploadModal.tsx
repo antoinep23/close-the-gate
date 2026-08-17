@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AiOutlineClose, AiOutlineCloudUpload } from 'react-icons/ai';
 import { uploadFile } from '../services/api';
 
@@ -15,6 +15,12 @@ export function UploadModal({ isOpen, onClose, keys, onUploadSuccess, onUploadEr
   const [selectedKey, setSelectedKey] = useState(keys[0] || '');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!selectedKey && keys.length > 0) {
+      setSelectedKey(keys[0]);
+    }
+  }, [keys, selectedKey]);
 
   if (!isOpen) return null;
 
