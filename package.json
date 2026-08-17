@@ -8,6 +8,7 @@
   "main": "main.js",
   "scripts": {
     "ts": "npx tsc && node --env-file=.env dist/main.js",
+    "web": "cd web && npm run start",
     "build": "npx tsc",
     "test": "npm run test",
     "cli-init": "npm link"
