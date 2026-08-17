@@ -4,6 +4,8 @@ import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
 import { SettingsModal } from './components/SettingsModal';
 import { UploadModal } from './components/UploadModal';
+import { KeyGenModal } from './components/KeyGenModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import { ToastContainer } from './components/Toast';
 import type { ToastData } from './components/Toast';
 import { useFiles } from './hooks/useFiles';
@@ -12,7 +14,7 @@ import { useKeys } from './hooks/useKeys';
 import { getFileCategory } from './utils/fileIcons';
 import type { FileCategory } from './utils/fileIcons';
 import type { FileItem } from './data/mockFiles';
-import { openFile } from './services/api';
+import { openFile, deleteKey } from './services/api';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
@@ -31,11 +33,13 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [keyGenOpen, setKeyGenOpen] = useState(false);
+  const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
   const { files, loading, error, updateFileStar, refetch } = useFiles();
   const { settings, saveSettings } = useSettings();
-  const { keys } = useKeys();
+  const { keys, refetchKeys } = useKeys();
 
   const addToast = useCallback((type: 'success' | 'error', message: string) => {
     const id = crypto.randomUUID();
@@ -119,6 +123,27 @@ function App() {
     addToast('error', `Failed to remove "${fileName}": ${err}`);
   }, [addToast]);
 
+  const onKeyGenSuccess = useCallback((keyName: string) => {
+    addToast('success', `Generated key "${keyName}"`);
+    refetchKeys();
+  }, [addToast, refetchKeys]);
+
+  const onKeyGenError = useCallback((err: string) => {
+    addToast('error', `Key generation failed: ${err}`);
+  }, [addToast]);
+
+  const handleDeleteKey = useCallback(async () => {
+    if (!keyToDelete) return;
+    const result = await deleteKey(keyToDelete);
+    if (result.success) {
+      addToast('success', `Deleted key "${keyToDelete}"`);
+      refetchKeys();
+    } else {
+      addToast('error', `Failed to delete key: ${result.error}`);
+    }
+    setKeyToDelete(null);
+  }, [keyToDelete, addToast, refetchKeys]);
+
   let displayFiles: FileItem[];
 
   if (activeSection === 'downloaded') {
@@ -152,7 +177,7 @@ function App() {
         onSettingsOpen={() => setSettingsOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} />
+        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} onGenerateKey={() => setKeyGenOpen(true)} onDeleteKey={(k) => setKeyToDelete(k)} />
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-800">
@@ -197,6 +222,20 @@ function App() {
         keys={keys}
         onUploadSuccess={onUploadSuccess}
         onUploadError={onUploadError}
+      />
+      <KeyGenModal
+        isOpen={keyGenOpen}
+        onClose={() => setKeyGenOpen(false)}
+        onSuccess={onKeyGenSuccess}
+        onError={onKeyGenError}
+      />
+      <ConfirmModal
+        isOpen={!!keyToDelete}
+        title="Delete key"
+        message={`Delete "${keyToDelete}" permanently? Files encrypted with this key will no longer be decryptable.`}
+        confirmLabel="Delete"
+        onConfirm={handleDeleteKey}
+        onCancel={() => setKeyToDelete(null)}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>

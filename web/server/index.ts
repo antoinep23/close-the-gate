@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
+import { randomBytes, createSecretKey, randomUUID } from 'crypto';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -67,6 +68,69 @@ app.get('/api/keys', (_req, res) => {
   } catch (err) {
     console.error('Keys listing error:', err);
     res.status(500).json({ error: 'Failed to list keys' });
+  }
+});
+
+// --- Key generation endpoint ---
+
+app.post('/api/keys', (req, res) => {
+  const { keyName, bytes } = req.body;
+  const keyBytes = bytes || 32;
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    const rawKey = randomBytes(keyBytes);
+    const keyMaterial = createSecretKey(rawKey);
+
+    fs.mkdirSync(keysDir, { recursive: true });
+    const fileName = keyName ? `${keyName}.pem` : `${randomUUID()}.pem`;
+    const filePath = path.join(keysDir, fileName);
+
+    fs.writeFileSync(filePath, keyMaterial.export(), { mode: 0o600 });
+
+    res.json({ success: true, keyName: fileName, path: filePath });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Key generation error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+// --- Key deletion endpoint ---
+
+app.delete('/api/keys/:keyName', (req, res) => {
+  const { keyName } = req.params;
+
+  if (!keyName) {
+    res.status(400).json({ error: 'keyName is required' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    const filePath = path.join(keysDir, keyName);
+
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: 'Key not found' });
+      return;
+    }
+
+    fs.unlinkSync(filePath);
+    res.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Key deletion error:', message);
+    res.status(500).json({ error: message });
   }
 });
 

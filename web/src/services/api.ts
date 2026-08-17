@@ -94,3 +94,33 @@ export async function deleteLocalFile(fileName: string): Promise<{ success: bool
 
   return { success: true };
 }
+
+export async function generateKey(keyName?: string, bytes?: number): Promise<{ success: boolean; keyName?: string; error?: string }> {
+  const res = await fetch('/api/keys', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keyName: keyName || undefined, bytes: bytes || 32 }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Key generation failed' };
+  }
+
+  return { success: true, keyName: data.keyName };
+}
+
+export async function deleteKey(keyName: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`/api/keys/${encodeURIComponent(keyName)}`, {
+    method: 'DELETE',
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Key deletion failed' };
+  }
+
+  return { success: true };
+}

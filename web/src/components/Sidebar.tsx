@@ -1,4 +1,4 @@
-import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload } from 'react-icons/ai';
+import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload, AiOutlinePlus, AiOutlineDelete } from 'react-icons/ai';
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
 import type { FileCategory } from '../utils/fileIcons';
@@ -11,6 +11,8 @@ interface SidebarProps {
   keys: string[];
   region: string;
   onUploadClick: () => void;
+  onGenerateKey: () => void;
+  onDeleteKey: (keyName: string) => void;
 }
 
 const navItems = [
@@ -34,7 +36,6 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-// S3 Standard pricing based on configured region
 function estimateMonthlyCost(totalBytes: number, region: string): string {
   const gb = totalBytes / (1024 * 1024 * 1024);
   const pricePerGb = getS3PricePerGb(region);
@@ -43,7 +44,7 @@ function estimateMonthlyCost(totalBytes: number, region: string): string {
   return `~$${cost.toFixed(2)}`;
 }
 
-export function Sidebar({ activeSection, onSectionChange, files, keys, region, onUploadClick }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, files, keys, region, onUploadClick, onGenerateKey, onDeleteKey }: SidebarProps) {
   const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
   const totalStorageSize = formatSize(totalBytes);
   const monthlyCost = estimateMonthlyCost(totalBytes, region);
@@ -101,8 +102,15 @@ export function Sidebar({ activeSection, onSectionChange, files, keys, region, o
           );
         })}
 
-        <div className="mt-4 mb-2 px-4">
+        <div className="mt-4 mb-2 px-4 flex items-center justify-between">
           <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Keys</span>
+          <button
+            onClick={onGenerateKey}
+            className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
+            title="Generate new key"
+          >
+            <AiOutlinePlus className="w-3.5 h-3.5 text-gray-400" />
+          </button>
         </div>
 
         {keys.length === 0 ? (
@@ -111,11 +119,18 @@ export function Sidebar({ activeSection, onSectionChange, files, keys, region, o
           keys.map((keyName) => (
             <div
               key={keyName}
-              className="flex items-center gap-2 px-4 py-1.5 text-sm text-gray-600 truncate"
+              className="group flex items-center gap-2 px-4 py-1.5 text-sm text-gray-600 truncate"
               title={keyName}
             >
               <AiOutlineKey className="w-4 h-4 flex-shrink-0 text-amber-500" />
-              <span className="truncate">{keyName}</span>
+              <span className="truncate flex-1">{keyName}</span>
+              <button
+                onClick={() => onDeleteKey(keyName)}
+                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 cursor-pointer transition-all"
+                title="Delete key"
+              >
+                <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
+              </button>
             </div>
           ))
         )}
