@@ -31,7 +31,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
-  const { files, loading, error } = useFiles();
+  const { files, loading, error, updateFileStar } = useFiles();
   const { settings, saveSettings } = useSettings();
   const { keys } = useKeys();
 
@@ -85,6 +85,10 @@ function App() {
       addToast('error', `Failed to open "${fileName}": ${result.error}`);
     }
   }, [addToast]);
+
+  const onStarToggle = useCallback((fileName: string, isStarred: boolean) => {
+    updateFileStar(fileName, isStarred);
+  }, [updateFileStar]);
 
   let displayFiles: FileItem[];
 
@@ -142,6 +146,7 @@ function App() {
               onDownloadSuccess={onDownloadSuccess}
               onDownloadError={onDownloadError}
               onFileOpen={activeSection === 'downloaded' ? onFileOpen : undefined}
+              onStarToggle={onStarToggle}
               hideDownload={activeSection === 'downloaded'}
             />
           )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FileItem } from '../data/mockFiles';
 
 export function useFiles() {
@@ -26,5 +26,11 @@ export function useFiles() {
     fetchFiles();
   }, []);
 
-  return { files, loading, error };
+  const updateFileStar = useCallback((fileName: string, isStarred: boolean) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.fileName === fileName ? { ...f, isStarred } : f))
+    );
+  }, []);
+
+  return { files, loading, error, updateFileStar };
 }

@@ -29,3 +29,19 @@ export async function openFile(fileName: string): Promise<{ success: boolean; er
 
   return { success: true };
 }
+
+export async function toggleStar(fileName: string, isStarred: boolean): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`/api/files/${encodeURIComponent(fileName)}/star`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isStarred }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to toggle star' };
+  }
+
+  return { success: true };
+}

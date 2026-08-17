@@ -1,20 +1,22 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
-import { downloadFile } from '../services/api';
+import { downloadFile, toggleStar } from '../services/api';
 
 interface FileRowProps {
   file: FileItem;
   onDownloadSuccess?: (fileName: string) => void;
   onDownloadError?: (fileName: string, error: string) => void;
   onFileOpen?: (fileName: string) => void;
+  onStarToggle?: (fileName: string, isStarred: boolean) => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
+  const [starred, setStarred] = useState(file.isStarred);
 
   async function handleDownload(e: React.MouseEvent) {
     e.stopPropagation();
@@ -27,6 +29,19 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
       onDownloadSuccess?.(file.fileName);
     } else {
       onDownloadError?.(file.fileName, result.error || 'Unknown error');
+    }
+  }
+
+  async function handleStar(e: React.MouseEvent) {
+    e.stopPropagation();
+    const newValue = !starred;
+    setStarred(newValue);
+
+    const result = await toggleStar(file.fileName, newValue);
+    if (result.success) {
+      onStarToggle?.(file.fileName, newValue);
+    } else {
+      setStarred(!newValue);
     }
   }
 
@@ -46,6 +61,18 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
       </td>
       <td className="py-2.5 text-sm text-gray-500">{formatDate(file.uploadDate)}</td>
       <td className="py-2.5 text-sm text-gray-500">{formatSize(file.size)}</td>
+      <td className="py-2.5">
+        <button
+          onClick={handleStar}
+          className={`p-1 rounded-full cursor-pointer transition-all ${
+            starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-yellow-400'
+          }`}
+          aria-label={starred ? 'Unstar' : 'Star'}
+          title={starred ? 'Unstar' : 'Star'}
+        >
+          {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
+        </button>
+      </td>
       {!hideDownload && (
         <td className="py-2.5">
           <button

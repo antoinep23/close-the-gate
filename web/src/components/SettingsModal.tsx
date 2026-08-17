@@ -19,7 +19,6 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
 
   const fields = [
     { key: 'keysPath' as const, label: 'Keys Path', placeholder: './keys' },
-    { key: 'filesPath' as const, label: 'Files Path', placeholder: './files' },
     { key: 'downloadPath' as const, label: 'Download Path', placeholder: './download' },
   ];
 

@@ -1,20 +1,22 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
-import { downloadFile } from '../services/api';
+import { downloadFile, toggleStar } from '../services/api';
 
 interface FileCardProps {
   file: FileItem;
   onDownloadSuccess?: (fileName: string) => void;
   onDownloadError?: (fileName: string, error: string) => void;
   onFileOpen?: (fileName: string) => void;
+  onStarToggle?: (fileName: string, isStarred: boolean) => void;
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, hideDownload }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
+  const [starred, setStarred] = useState(file.isStarred);
 
   async function handleDownload(e: React.MouseEvent) {
     e.stopPropagation();
@@ -27,6 +29,19 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       onDownloadSuccess?.(file.fileName);
     } else {
       onDownloadError?.(file.fileName, result.error || 'Unknown error');
+    }
+  }
+
+  async function handleStar(e: React.MouseEvent) {
+    e.stopPropagation();
+    const newValue = !starred;
+    setStarred(newValue);
+
+    const result = await toggleStar(file.fileName, newValue);
+    if (result.success) {
+      onStarToggle?.(file.fileName, newValue);
+    } else {
+      setStarred(!newValue); // revert on failure
     }
   }
 
@@ -44,21 +59,33 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       <div className="flex items-center gap-3">
         <Icon className={`w-6 h-6 flex-shrink-0 ${color}`} />
         <span className="text-sm text-gray-800 truncate flex-1">{file.fileName}</span>
-        {!hideDownload && (
+        <div className="flex items-center gap-1">
           <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
-            aria-label={`Download ${file.fileName}`}
-            title="Download"
+            onClick={handleStar}
+            className={`p-1 rounded-full cursor-pointer transition-all ${
+              starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-yellow-400'
+            }`}
+            aria-label={starred ? 'Unstar' : 'Star'}
+            title={starred ? 'Unstar' : 'Star'}
           >
-            {downloading ? (
-              <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
-            ) : (
-              <AiOutlineDownload className="w-4 h-4 text-gray-500" />
-            )}
+            {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
           </button>
-        )}
+          {!hideDownload && (
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              aria-label={`Download ${file.fileName}`}
+              title="Download"
+            >
+              {downloading ? (
+                <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
+              ) : (
+                <AiOutlineDownload className="w-4 h-4 text-gray-500" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
         <span>{formatDate(file.uploadDate)}</span>

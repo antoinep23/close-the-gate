@@ -5,7 +5,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { fileURLToPath } from 'url';
-import { DynamoDBClient, ScanCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import downloadRouter from './download';
 
@@ -137,6 +137,32 @@ app.use('/api', downloadRouter);
 
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 const tableName = process.env.DYNAMO_TABLE!;
+
+// --- Toggle star endpoint ---
+
+app.patch('/api/files/:fileName/star', async (req, res) => {
+  const { fileName } = req.params;
+  const { isStarred } = req.body;
+
+  if (typeof isStarred !== 'boolean') {
+    res.status(400).json({ error: 'isStarred (boolean) is required' });
+    return;
+  }
+
+  try {
+    const command = new UpdateItemCommand({
+      TableName: tableName,
+      Key: { fileName: { S: fileName } },
+      UpdateExpression: 'SET isStarred = :starred',
+      ExpressionAttributeValues: { ':starred': { BOOL: isStarred } },
+    });
+    await dynamoClient.send(command);
+    res.json({ success: true, fileName, isStarred });
+  } catch (err) {
+    console.error('Toggle star error:', err);
+    res.status(500).json({ error: 'Failed to update star status' });
+  }
+});
 
 app.get('/api/files', async (_req, res) => {
   try {
