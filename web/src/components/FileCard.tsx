@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
-import { downloadFile, toggleStar } from '../services/api';
+import { downloadFile, toggleStar, deleteFile } from '../services/api';
+import { ConfirmModal } from './ConfirmModal';
 
 interface FileCardProps {
   file: FileItem;
@@ -10,12 +11,16 @@ interface FileCardProps {
   onDownloadError?: (fileName: string, error: string) => void;
   onFileOpen?: (fileName: string) => void;
   onStarToggle?: (fileName: string, isStarred: boolean) => void;
+  onDeleteSuccess?: (fileName: string) => void;
+  onDeleteError?: (fileName: string, error: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, hideDownload }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [starred, setStarred] = useState(file.isStarred);
 
   async function handleDownload(e: React.MouseEvent) {
@@ -41,7 +46,25 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
     if (result.success) {
       onStarToggle?.(file.fileName, newValue);
     } else {
-      setStarred(!newValue); // revert on failure
+      setStarred(!newValue);
+    }
+  }
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    setConfirmOpen(true);
+  }
+
+  async function confirmDelete() {
+    setConfirmOpen(false);
+    setDeleting(true);
+    const result = await deleteFile(file.fileName, file.keyName);
+    setDeleting(false);
+
+    if (result.success) {
+      onDeleteSuccess?.(file.fileName);
+    } else {
+      onDeleteError?.(file.fileName, result.error || 'Unknown error');
     }
   }
 
@@ -71,19 +94,34 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
           </button>
           {!hideDownload && (
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
-              aria-label={`Download ${file.fileName}`}
-              title="Download"
-            >
-              {downloading ? (
-                <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
-              ) : (
-                <AiOutlineDownload className="w-4 h-4 text-gray-500" />
-              )}
-            </button>
+            <>
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+                aria-label={`Download ${file.fileName}`}
+                title="Download"
+              >
+                {downloading ? (
+                  <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
+                ) : (
+                  <AiOutlineDownload className="w-4 h-4 text-gray-500" />
+                )}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+                aria-label={`Delete ${file.fileName}`}
+                title="Delete"
+              >
+                {deleting ? (
+                  <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
+                ) : (
+                  <AiOutlineDelete className="w-4 h-4 text-red-500" />
+                )}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -91,6 +129,13 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         <span>{formatDate(file.uploadDate)}</span>
         <span>{formatSize(file.size)}</span>
       </div>
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title="Delete file"
+        message={`"${file.fileName}" will be permanently deleted from S3. This cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

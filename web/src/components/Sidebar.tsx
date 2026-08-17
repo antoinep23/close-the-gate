@@ -10,6 +10,7 @@ interface SidebarProps {
   files: FileItem[];
   keys: string[];
   region: string;
+  onUploadClick: () => void;
 }
 
 const navItems = [
@@ -42,14 +43,14 @@ function estimateMonthlyCost(totalBytes: number, region: string): string {
   return `~$${cost.toFixed(2)}`;
 }
 
-export function Sidebar({ activeSection, onSectionChange, files, keys, region }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, files, keys, region, onUploadClick }: SidebarProps) {
   const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
   const totalStorageSize = formatSize(totalBytes);
   const monthlyCost = estimateMonthlyCost(totalBytes, region);
   return (
     <aside className="w-56 bg-gray-50 border-r border-gray-200 h-full flex flex-col">
       <div className="p-4">
-        <button className="flex items-center cursor-pointer gap-2 bg-white border border-gray-300 rounded-2xl px-5 py-3 shadow-sm hover:shadow-md transition-shadow w-full">
+        <button onClick={onUploadClick} className="flex items-center cursor-pointer gap-2 bg-white border border-gray-300 rounded-2xl px-5 py-3 shadow-sm hover:shadow-md transition-shadow w-full">
           <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>

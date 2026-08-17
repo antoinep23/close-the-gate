@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
-import { downloadFile, toggleStar } from '../services/api';
+import { downloadFile, toggleStar, deleteFile } from '../services/api';
+import { ConfirmModal } from './ConfirmModal';
 
 interface FileRowProps {
   file: FileItem;
@@ -10,12 +11,16 @@ interface FileRowProps {
   onDownloadError?: (fileName: string, error: string) => void;
   onFileOpen?: (fileName: string) => void;
   onStarToggle?: (fileName: string, isStarred: boolean) => void;
+  onDeleteSuccess?: (fileName: string) => void;
+  onDeleteError?: (fileName: string, error: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [starred, setStarred] = useState(file.isStarred);
 
   async function handleDownload(e: React.MouseEvent) {
@@ -45,6 +50,24 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
     }
   }
 
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    setConfirmOpen(true);
+  }
+
+  async function confirmDelete() {
+    setConfirmOpen(false);
+    setDeleting(true);
+    const result = await deleteFile(file.fileName, file.keyName);
+    setDeleting(false);
+
+    if (result.success) {
+      onDeleteSuccess?.(file.fileName);
+    } else {
+      onDeleteError?.(file.fileName, result.error || 'Unknown error');
+    }
+  }
+
   function handleClick() {
     if (onFileOpen) {
       onFileOpen(file.fileName);
@@ -52,45 +75,71 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
   }
 
   return (
-    <tr onClick={handleClick} className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
-      <td className="py-2.5">
-        <div className="flex items-center gap-3">
-          <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />
-          <span className="text-sm text-gray-800">{file.fileName}</span>
-        </div>
-      </td>
-      <td className="py-2.5 text-sm text-gray-500">{formatDate(file.uploadDate)}</td>
-      <td className="py-2.5 text-sm text-gray-500">{formatSize(file.size)}</td>
-      <td className="py-2.5">
-        <button
-          onClick={handleStar}
-          className={`p-1 rounded-full cursor-pointer transition-all ${
-            starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-yellow-400'
-          }`}
-          aria-label={starred ? 'Unstar' : 'Star'}
-          title={starred ? 'Unstar' : 'Star'}
-        >
-          {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
-        </button>
-      </td>
-      {!hideDownload && (
+    <>
+      <tr onClick={handleClick} className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+        <td className="py-2.5">
+          <div className="flex items-center gap-3">
+            <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />
+            <span className="text-sm text-gray-800">{file.fileName}</span>
+          </div>
+        </td>
+        <td className="py-2.5 text-sm text-gray-500">{formatDate(file.uploadDate)}</td>
+        <td className="py-2.5 text-sm text-gray-500">{formatSize(file.size)}</td>
         <td className="py-2.5">
           <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
-            aria-label={`Download ${file.fileName}`}
-            title="Download"
+            onClick={handleStar}
+            className={`p-1 rounded-full cursor-pointer transition-all ${
+              starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-yellow-400'
+            }`}
+            aria-label={starred ? 'Unstar' : 'Star'}
+            title={starred ? 'Unstar' : 'Star'}
           >
-            {downloading ? (
-              <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
-            ) : (
-              <AiOutlineDownload className="w-4 h-4 text-gray-500" />
-            )}
+            {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
           </button>
         </td>
-      )}
-    </tr>
+        {!hideDownload && (
+          <>
+            <td className="py-2.5">
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+                aria-label={`Download ${file.fileName}`}
+                title="Download"
+              >
+                {downloading ? (
+                  <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
+                ) : (
+                  <AiOutlineDownload className="w-4 h-4 text-gray-500" />
+                )}
+              </button>
+            </td>
+            <td className="py-2.5">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+                aria-label={`Delete ${file.fileName}`}
+                title="Delete"
+              >
+                {deleting ? (
+                  <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
+                ) : (
+                  <AiOutlineDelete className="w-4 h-4 text-red-500" />
+                )}
+              </button>
+            </td>
+          </>
+        )}
+      </tr>
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title="Delete file"
+        message={`"${file.fileName}" will be permanently deleted from S3. This cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }
 

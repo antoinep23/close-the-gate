@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { DynamoDBClient, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import downloadRouter from './download';
+import uploadRouter from './upload';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const configPath = path.resolve(__dirname, '../../config.json');
@@ -134,6 +135,9 @@ app.post('/api/open', (req, res) => {
 
 // --- Download endpoint (uses core Key/File classes) ---
 app.use('/api', downloadRouter);
+
+// --- Upload endpoint (uses core Key/File classes) ---
+app.use('/api', uploadRouter);
 
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 const tableName = process.env.DYNAMO_TABLE!;

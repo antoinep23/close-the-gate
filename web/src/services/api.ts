@@ -45,3 +45,38 @@ export async function toggleStar(fileName: string, isStarred: boolean): Promise<
 
   return { success: true };
 }
+
+export async function uploadFile(file: globalThis.File, keyName: string): Promise<{ success: boolean; error?: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('keyName', keyName);
+
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Upload failed' };
+  }
+
+  return { success: true };
+}
+
+export async function deleteFile(fileName: string, keyName: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`/api/files/${encodeURIComponent(fileName)}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keyName }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Delete failed' };
+  }
+
+  return { success: true };
+}

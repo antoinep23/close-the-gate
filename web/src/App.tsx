@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
 import { SettingsModal } from './components/SettingsModal';
+import { UploadModal } from './components/UploadModal';
 import { ToastContainer } from './components/Toast';
 import type { ToastData } from './components/Toast';
 import { useFiles } from './hooks/useFiles';
@@ -29,9 +30,10 @@ function App() {
   const [activeSection, setActiveSection] = useState('my-drive');
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
-  const { files, loading, error, updateFileStar } = useFiles();
+  const { files, loading, error, updateFileStar, refetch } = useFiles();
   const { settings, saveSettings } = useSettings();
   const { keys } = useKeys();
 
@@ -90,6 +92,24 @@ function App() {
     updateFileStar(fileName, isStarred);
   }, [updateFileStar]);
 
+  const onDeleteSuccess = useCallback((fileName: string) => {
+    addToast('success', `Deleted "${fileName}" from S3`);
+    refetch();
+  }, [addToast, refetch]);
+
+  const onDeleteError = useCallback((fileName: string, err: string) => {
+    addToast('error', `Failed to delete "${fileName}": ${err}`);
+  }, [addToast]);
+
+  const onUploadSuccess = useCallback((fileName: string) => {
+    addToast('success', `Uploaded "${fileName}" successfully`);
+    refetch();
+  }, [addToast, refetch]);
+
+  const onUploadError = useCallback((fileName: string, err: string) => {
+    addToast('error', `Failed to upload "${fileName}": ${err}`);
+  }, [addToast]);
+
   let displayFiles: FileItem[];
 
   if (activeSection === 'downloaded') {
@@ -123,7 +143,7 @@ function App() {
         onSettingsOpen={() => setSettingsOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} keys={keys} region={settings.region} />
+        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} />
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-800">
@@ -147,6 +167,8 @@ function App() {
               onDownloadError={onDownloadError}
               onFileOpen={activeSection === 'downloaded' ? onFileOpen : undefined}
               onStarToggle={onStarToggle}
+              onDeleteSuccess={onDeleteSuccess}
+              onDeleteError={onDeleteError}
               hideDownload={activeSection === 'downloaded'}
             />
           )}
@@ -157,6 +179,13 @@ function App() {
         onClose={() => setSettingsOpen(false)}
         settings={settings}
         onSettingsChange={saveSettings}
+      />
+      <UploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        keys={keys}
+        onUploadSuccess={onUploadSuccess}
+        onUploadError={onUploadError}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>

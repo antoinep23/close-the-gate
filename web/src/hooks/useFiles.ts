@@ -32,5 +32,16 @@ export function useFiles() {
     );
   }, []);
 
-  return { files, loading, error, updateFileStar };
+  const refetch = useCallback(async () => {
+    try {
+      const res = await fetch('/api/files');
+      if (!res.ok) return;
+      const data: FileItem[] = await res.json();
+      setFiles(data);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  return { files, loading, error, updateFileStar, refetch };
 }

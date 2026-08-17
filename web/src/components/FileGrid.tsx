@@ -9,10 +9,12 @@ interface FileGridProps {
   onDownloadError?: (fileName: string, error: string) => void;
   onFileOpen?: (fileName: string) => void;
   onStarToggle?: (fileName: string, isStarred: boolean) => void;
+  onDeleteSuccess?: (fileName: string) => void;
+  onDeleteError?: (fileName: string, error: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, hideDownload }: FileGridProps) {
+export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, hideDownload }: FileGridProps) {
   if (files.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
@@ -32,6 +34,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
               <th className="pb-2 font-medium">Size</th>
               <th className="pb-2 font-medium w-10"></th>
               {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
+              {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
             </tr>
           </thead>
           <tbody>
@@ -43,6 +46,8 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                 onDownloadError={onDownloadError}
                 onFileOpen={onFileOpen}
                 onStarToggle={onStarToggle}
+                onDeleteSuccess={onDeleteSuccess}
+                onDeleteError={onDeleteError}
                 hideDownload={hideDownload}
               />
             ))}
@@ -63,6 +68,8 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
             onDownloadError={onDownloadError}
             onFileOpen={onFileOpen}
             onStarToggle={onStarToggle}
+            onDeleteSuccess={onDeleteSuccess}
+            onDeleteError={onDeleteError}
             hideDownload={hideDownload}
           />
         ))}
