@@ -90,7 +90,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                 onClick={() => handleSort('uploadDate')}
               >
                 <span className="inline-flex items-center">
-                  Upload date
+                  {hideDownload ? 'Download date' : 'Upload date'}
                   <SortArrow field="uploadDate" activeField={sortField} direction={sortDirection} />
                 </span>
               </th>
