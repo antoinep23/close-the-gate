@@ -110,6 +110,15 @@ function App() {
     addToast('error', `Failed to upload "${fileName}": ${err}`);
   }, [addToast]);
 
+  const onDeleteLocalSuccess = useCallback((fileName: string) => {
+    addToast('success', `Removed "${fileName}" from local`);
+    fetchDownloaded();
+  }, [addToast, fetchDownloaded]);
+
+  const onDeleteLocalError = useCallback((fileName: string, err: string) => {
+    addToast('error', `Failed to remove "${fileName}": ${err}`);
+  }, [addToast]);
+
   let displayFiles: FileItem[];
 
   if (activeSection === 'downloaded') {
@@ -169,6 +178,8 @@ function App() {
               onStarToggle={onStarToggle}
               onDeleteSuccess={onDeleteSuccess}
               onDeleteError={onDeleteError}
+              onDeleteLocalSuccess={activeSection === 'downloaded' ? onDeleteLocalSuccess : undefined}
+              onDeleteLocalError={activeSection === 'downloaded' ? onDeleteLocalError : undefined}
               hideDownload={activeSection === 'downloaded'}
             />
           )}

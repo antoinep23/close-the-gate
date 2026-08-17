@@ -11,10 +11,12 @@ interface FileGridProps {
   onStarToggle?: (fileName: string, isStarred: boolean) => void;
   onDeleteSuccess?: (fileName: string) => void;
   onDeleteError?: (fileName: string, error: string) => void;
+  onDeleteLocalSuccess?: (fileName: string) => void;
+  onDeleteLocalError?: (fileName: string, error: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, hideDownload }: FileGridProps) {
+export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, hideDownload }: FileGridProps) {
   if (files.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
@@ -34,7 +36,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
               <th className="pb-2 font-medium">Size</th>
               <th className="pb-2 font-medium w-10"></th>
               {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
-              {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
+              <th className="pb-2 font-medium w-10"></th>
             </tr>
           </thead>
           <tbody>
@@ -48,6 +50,8 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                 onStarToggle={onStarToggle}
                 onDeleteSuccess={onDeleteSuccess}
                 onDeleteError={onDeleteError}
+                onDeleteLocalSuccess={onDeleteLocalSuccess}
+                onDeleteLocalError={onDeleteLocalError}
                 hideDownload={hideDownload}
               />
             ))}
@@ -70,6 +74,8 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
             onStarToggle={onStarToggle}
             onDeleteSuccess={onDeleteSuccess}
             onDeleteError={onDeleteError}
+            onDeleteLocalSuccess={onDeleteLocalSuccess}
+            onDeleteLocalError={onDeleteLocalError}
             hideDownload={hideDownload}
           />
         ))}

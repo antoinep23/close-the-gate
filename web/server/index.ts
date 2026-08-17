@@ -133,6 +133,39 @@ app.post('/api/open', (req, res) => {
   }
 });
 
+// --- Delete local file endpoint ---
+
+app.delete('/api/downloaded/:fileName', (req, res) => {
+  const { fileName } = req.params;
+
+  if (!fileName) {
+    res.status(400).json({ error: 'fileName is required' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const downloadDir = path.isAbsolute(settings.downloadPath)
+      ? settings.downloadPath
+      : path.resolve(projectRoot, settings.downloadPath);
+
+    const filePath = path.join(downloadDir, fileName);
+
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: 'File not found in download directory' });
+      return;
+    }
+
+    fs.unlinkSync(filePath);
+    res.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Delete local file error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
 // --- Download endpoint (uses core Key/File classes) ---
 app.use('/api', downloadRouter);
 

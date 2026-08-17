@@ -80,3 +80,17 @@ export async function deleteFile(fileName: string, keyName: string): Promise<{ s
 
   return { success: true };
 }
+
+export async function deleteLocalFile(fileName: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`/api/downloaded/${encodeURIComponent(fileName)}`, {
+    method: 'DELETE',
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to delete local file' };
+  }
+
+  return { success: true };
+}
