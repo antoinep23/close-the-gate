@@ -1,5 +1,9 @@
 # Close the gate
 
+<p>
+  <img src="resources/logo.png" alt="Close the Gate" width="100" />
+</p>
+
 A privacy-first software to upload encrypted-only files to AWS S3 while having full control and ownership over the keys and the encryption process.
 
 It follows a strict Zero-Knowledge architecture: the cloud provider (AWS S3) and the database (DynamoDB) never have access to the raw data or the cryptographic keys.
@@ -53,7 +57,19 @@ npm link
 
 ## Usage
 
-### 1. Command Line Interface (CLI)
+### 1. Web Interface
+
+The simplest way to use Close the Gate. Launch the web UI with:
+
+```bash
+npm run web
+```
+
+Then open your browser at the indicated URL. From the interface you can manage your keys, upload, download, and delete encrypted files visually.
+
+![Close the Gate Web UI](resources/screen_ui.png)
+
+### 2. Command Line Interface (CLI)
 
 Once linked, you can run `ctg` directly from your terminal.
 
@@ -128,7 +144,7 @@ ctg delete-key -n my-secret-key.pem
 - **`-n, --key-name <keyName>`** _(Required)_: Name of the key file to delete.
 - **`-P, --key-path <keyPath>`**: Custom path for the key directory.
 
-### 2. Programmatic Usage (SDK / TypeScript)
+### 3. Programmatic Usage (SDK / TypeScript)
 
 You can also import and use the core classes (`Key` and `File`) directly in your Node.js code.
 
