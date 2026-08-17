@@ -12,9 +12,9 @@ export default class File {
     public customPath: string | null;
     private fileName: string | null;
     private hashName: string | null;
+    private isStarred: boolean;
     private buffer: Buffer | null;
     private key: Key | null;
-    private iv: string | null;
     private s3Client: S3Client;
     private bucketName: string;
     private dynamoDBClient: DynamoDBClient;
@@ -25,19 +25,20 @@ export default class File {
         this.customPath = null;
         this.fileName = null;
         this.hashName = null;
+        this.isStarred = false;
         this.buffer = null;
         this.key = null;
-        this.iv = null;
         this.s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
         this.bucketName = process.env.S3_BUCKET!;
         this.dynamoDBClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
         this.dynamoTableName = process.env.DYNAMO_TABLE!;
     }
 
-    public async upload(fileName: string, key: Key, customPath?: string): Promise<string> {
+    public async upload(fileName: string, key: Key, customPath?: string, isStarred?: boolean): Promise<string> {
         this.key = key;
         this.fileName = fileName;
-        
+        this.isStarred = isStarred || false;
+
         if (customPath) this.customPath = customPath;
         this.configureDirPath("files");
         const path = join(this.localPath as string, fileName);
@@ -93,7 +94,6 @@ export default class File {
         }
 
         const iv = randomBytes(12);
-        this.iv = iv.toString('base64');
         const cipher = createCipheriv('aes-256-gcm', keyMaterial, iv);
 
         const encryptedFile = Buffer.concat([
@@ -144,15 +144,16 @@ export default class File {
     }
 
     private async writeToDynamoDB() : Promise<string> {
-        if (!this.fileName || !this.iv || !this.buffer) {
-            throw new Error("Can not write to DynamoDB as the file name, iv or buffer are missing")
+        if (!this.fileName || !this.buffer) {
+            throw new Error("Can not write to DynamoDB as the file name or buffer are missing")
         }
 
         const metadata: FileMetadata = {
             fileName: this.fileName!,
-            iv: this.iv!,
             size: this.buffer!.length,
             uploadDate: new Date().toISOString(),
+            isStarred: this.isStarred,
+            keyName: this.key?.id + ".pem" || "unknown",
         };
 
         try {

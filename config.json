@@ -1,0 +1,6 @@
+{
+  "keysPath": "./keys",
+  "filesPath": "./files",
+  "downloadPath": "./download",
+  "region": "eu-west-1"
+}
