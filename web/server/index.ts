@@ -10,6 +10,10 @@ import { DynamoDBClient, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import downloadRouter from './download';
 import uploadRouter from './upload';
+import KeyModule from '../../src/keys';
+
+// Handle default export interop (CJS/ESM mismatch)
+const Key = (KeyModule as any).default || KeyModule;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const configPath = path.resolve(__dirname, '../../config.json');
@@ -130,6 +134,99 @@ app.delete('/api/keys/:keyName', (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Key deletion error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+// --- Key backup endpoint ---
+
+app.post('/api/keys/backup', (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    res.status(400).json({ error: 'password is required' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    const backupPath = Key.backup(password, keysDir, keysDir);
+    const fileName = path.basename(backupPath);
+
+    res.json({ success: true, fileName });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Key backup error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+// --- Key restore endpoint ---
+
+app.post('/api/keys/restore', (req, res) => {
+  const { password, backupFileName } = req.body;
+
+  if (!password || !backupFileName) {
+    res.status(400).json({ error: 'password and backupFileName are required' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    const backupPath = path.resolve(keysDir, backupFileName);
+
+    if (!fs.existsSync(backupPath)) {
+      res.status(404).json({ error: 'Backup file not found' });
+      return;
+    }
+
+    const restoredKeys = Key.restore(password, backupPath, keysDir);
+
+    res.json({ success: true, restoredKeys });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Key restore error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+// --- List backup files endpoint ---
+
+app.get('/api/keys/backups', (_req, res) => {
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    if (!fs.existsSync(keysDir)) {
+      res.json([]);
+      return;
+    }
+
+    const files = fs.readdirSync(keysDir)
+      .filter((f) => f.endsWith('.ctg-backup'))
+      .map((f) => {
+        const stat = fs.statSync(path.join(keysDir, f));
+        return { fileName: f, createdAt: stat.mtimeMs, size: stat.size };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    res.json(files);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('List backups error:', message);
     res.status(500).json({ error: message });
   }
 });

@@ -1,4 +1,4 @@
-import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload, AiOutlinePlus, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload, AiOutlinePlus, AiOutlineDelete, AiOutlineSave } from 'react-icons/ai';
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
 import type { FileCategory } from '../utils/fileIcons';
@@ -13,6 +13,7 @@ interface SidebarProps {
   onUploadClick: () => void;
   onGenerateKey: () => void;
   onDeleteKey: (keyName: string) => void;
+  onBackupClick: () => void;
 }
 
 const navItems = [
@@ -44,7 +45,7 @@ function estimateMonthlyCost(totalBytes: number, region: string): string {
   return `~$${cost.toFixed(2)}`;
 }
 
-export function Sidebar({ activeSection, onSectionChange, files, keys, region, onUploadClick, onGenerateKey, onDeleteKey }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, files, keys, region, onUploadClick, onGenerateKey, onDeleteKey, onBackupClick }: SidebarProps) {
   const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
   const totalStorageSize = formatSize(totalBytes);
   const monthlyCost = estimateMonthlyCost(totalBytes, region);
@@ -104,13 +105,22 @@ export function Sidebar({ activeSection, onSectionChange, files, keys, region, o
 
         <div className="mt-4 mb-2 px-4 flex items-center justify-between">
           <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Keys</span>
-          <button
-            onClick={onGenerateKey}
-            className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
-            title="Generate new key"
-          >
-            <AiOutlinePlus className="w-3.5 h-3.5 text-gray-400" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onBackupClick}
+              className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
+              title="Backup / Restore keys"
+            >
+              <AiOutlineSave className="w-3.5 h-3.5 text-gray-400" />
+            </button>
+            <button
+              onClick={onGenerateKey}
+              className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
+              title="Generate new key"
+            >
+              <AiOutlinePlus className="w-3.5 h-3.5 text-gray-400" />
+            </button>
+          </div>
         </div>
 
         {keys.length === 0 ? (

@@ -15,6 +15,8 @@ import { getFileCategory } from './utils/fileIcons';
 import type { FileCategory } from './utils/fileIcons';
 import type { FileItem } from './data/mockFiles';
 import { openFile, deleteKey, openDownloadFolder } from './services/api';
+import { BackupKeysModal } from './components/BackupKeysModal';
+import { RotateKeyModal } from './components/RotateKeyModal';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
@@ -35,6 +37,8 @@ function App() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [keyGenOpen, setKeyGenOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
+  const [backupOpen, setBackupOpen] = useState(false);
+  const [rotateFile, setRotateFile] = useState<{ fileName: string; keyName: string } | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
   const { files, loading, error, updateFileStar, refetch } = useFiles();
@@ -139,6 +143,32 @@ function App() {
     addToast('error', `Key generation failed: ${err}`);
   }, [addToast]);
 
+  const onBackupSuccess = useCallback((fileName: string) => {
+    addToast('success', `Backup created: ${fileName}`);
+  }, [addToast]);
+
+  const onBackupError = useCallback((err: string) => {
+    addToast('error', `Backup failed: ${err}`);
+  }, [addToast]);
+
+  const onRestoreSuccess = useCallback((keys: string[]) => {
+    addToast('success', `Restored ${keys.length} key(s)`);
+    refetchKeys();
+  }, [addToast, refetchKeys]);
+
+  const onRestoreError = useCallback((err: string) => {
+    addToast('error', `Restore failed: ${err}`);
+  }, [addToast]);
+
+  const onRotateSuccess = useCallback((fileName: string) => {
+    addToast('success', `Key rotated for "${fileName}"`);
+    refetch();
+  }, [addToast, refetch]);
+
+  const onRotateError = useCallback((fileName: string, err: string) => {
+    addToast('error', `Key rotation failed for "${fileName}": ${err}`);
+  }, [addToast]);
+
   const handleDeleteKey = useCallback(async () => {
     if (!keyToDelete) return;
     const result = await deleteKey(keyToDelete);
@@ -184,7 +214,7 @@ function App() {
         onSettingsOpen={() => setSettingsOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} onGenerateKey={() => setKeyGenOpen(true)} onDeleteKey={(k) => setKeyToDelete(k)} />
+        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} onGenerateKey={() => setKeyGenOpen(true)} onDeleteKey={(k) => setKeyToDelete(k)} onBackupClick={() => setBackupOpen(true)} />
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-800">
@@ -224,6 +254,7 @@ function App() {
               onDeleteError={onDeleteError}
               onDeleteLocalSuccess={activeSection === 'downloaded' ? onDeleteLocalSuccess : undefined}
               onDeleteLocalError={activeSection === 'downloaded' ? onDeleteLocalError : undefined}
+              onRotateClick={activeSection !== 'downloaded' ? (fileName, keyName) => setRotateFile({ fileName, keyName }) : undefined}
               hideDownload={activeSection === 'downloaded'}
             />
           )}
@@ -253,8 +284,26 @@ function App() {
         title="Delete key"
         message={`Delete "${keyToDelete}" permanently? Files encrypted with this key will no longer be decryptable.`}
         confirmLabel="Delete"
+        confirmText="delete"
         onConfirm={handleDeleteKey}
         onCancel={() => setKeyToDelete(null)}
+      />
+      <BackupKeysModal
+        isOpen={backupOpen}
+        onClose={() => setBackupOpen(false)}
+        onBackupSuccess={onBackupSuccess}
+        onBackupError={onBackupError}
+        onRestoreSuccess={onRestoreSuccess}
+        onRestoreError={onRestoreError}
+      />
+      <RotateKeyModal
+        isOpen={!!rotateFile}
+        fileName={rotateFile?.fileName || ''}
+        currentKeyName={rotateFile?.keyName || ''}
+        keys={keys}
+        onClose={() => setRotateFile(null)}
+        onSuccess={onRotateSuccess}
+        onError={onRotateError}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
