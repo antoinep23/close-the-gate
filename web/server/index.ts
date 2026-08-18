@@ -197,6 +197,30 @@ app.post('/api/open', (req, res) => {
   }
 });
 
+// --- Open download folder endpoint ---
+
+app.post('/api/open-folder', (_req, res) => {
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const downloadDir = path.isAbsolute(settings.downloadPath)
+      ? settings.downloadPath
+      : path.resolve(projectRoot, settings.downloadPath);
+
+    if (!fs.existsSync(downloadDir)) {
+      fs.mkdirSync(downloadDir, { recursive: true });
+    }
+
+    execSync(`open "${downloadDir}"`);
+
+    res.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Open folder error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
 // --- Delete local file endpoint ---
 
 app.delete('/api/downloaded/:fileName', (req, res) => {
