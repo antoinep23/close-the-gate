@@ -223,3 +223,15 @@ export async function deleteKey(keyName: string): Promise<{ success: boolean; er
 
   return { success: true };
 }
+
+export async function openDownloadFolder(): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch('/api/open-folder', { method: 'POST' });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to open folder' };
+  }
+
+  return { success: true };
+}

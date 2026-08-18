@@ -129,7 +129,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             disabled={deleting}
             className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
             aria-label={`Delete ${file.fileName}`}
-            title={isLocalDelete ? 'Remove from local' : 'Delete from S3'}
+            title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
           >
             {deleting ? (
               <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />

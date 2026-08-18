@@ -14,7 +14,7 @@ import { useKeys } from './hooks/useKeys';
 import { getFileCategory } from './utils/fileIcons';
 import type { FileCategory } from './utils/fileIcons';
 import type { FileItem } from './data/mockFiles';
-import { openFile, deleteKey } from './services/api';
+import { openFile, deleteKey, openDownloadFolder } from './services/api';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
@@ -190,6 +190,18 @@ function App() {
             <h2 className="text-lg font-medium text-gray-800">
               {getSectionTitle(activeSection)}
             </h2>
+            {activeSection === 'downloaded' && (
+              <button
+                onClick={() => openDownloadFolder()}
+                className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
+                title="Open folder"
+                aria-label="Open download folder"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+              </button>
+            )}
             {error && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
                 {error}

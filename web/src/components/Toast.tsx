@@ -24,7 +24,7 @@ export function ToastContainer({ toasts, onDismiss }: ToastProps) {
 
 function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: (id: string) => void }) {
   useEffect(() => {
-    const timer = setTimeout(() => onDismiss(toast.id), 4000);
+    const timer = setTimeout(() => onDismiss(toast.id), 6000);
     return () => clearTimeout(timer);
   }, [toast.id, onDismiss]);
 
