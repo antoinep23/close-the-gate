@@ -235,3 +235,43 @@ export async function openDownloadFolder(): Promise<{ success: boolean; error?: 
 
   return { success: true };
 }
+
+export async function backupKeys(password: string): Promise<{ success: boolean; fileName?: string; error?: string }> {
+  const res = await fetch('/api/keys/backup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Backup failed' };
+  }
+
+  return { success: true, fileName: data.fileName };
+}
+
+export async function restoreKeys(password: string, backupFileName: string): Promise<{ success: boolean; restoredKeys?: string[]; error?: string }> {
+  const res = await fetch('/api/keys/restore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password, backupFileName }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Restore failed' };
+  }
+
+  return { success: true, restoredKeys: data.restoredKeys };
+}
+
+export async function listBackups(): Promise<{ fileName: string; createdAt: number; size: number }[]> {
+  const res = await fetch('/api/keys/backups');
+
+  if (!res.ok) return [];
+
+  return await res.json();
+}

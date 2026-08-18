@@ -145,3 +145,42 @@ program
       console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     }
   });
+
+program
+  .command("backup-keys")
+  .description("Create a password-protected backup of all keys")
+  .requiredOption("-p, --password <password>", "Password to encrypt the backup")
+  .option("-P, --key-path <keyPath>", "Custom path for the keys directory (default is /keys)")
+  .option("-o, --output <outputPath>", "Custom output directory for the backup file (default is /keys)")
+  .action((options) => {
+    try {
+      const backupPath = Key.backup(
+        options.password,
+        options.keyPath || undefined,
+        options.output || undefined
+      );
+      console.log(`Backup created successfully: ${backupPath}`);
+    } catch (e: unknown) {
+      console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+    }
+  });
+
+program
+  .command("restore-keys")
+  .description("Restore keys from a password-protected backup file")
+  .requiredOption("-p, --password <password>", "Password to decrypt the backup")
+  .requiredOption("-f, --file <backupFile>", "Path to the .ctg-backup file")
+  .option("-P, --key-path <keyPath>", "Custom path for the keys directory (default is /keys)")
+  .action((options) => {
+    try {
+      const restoredKeys = Key.restore(
+        options.password,
+        options.file,
+        options.keyPath || undefined
+      );
+      console.log(`Restored ${restoredKeys.length} key(s):`);
+      restoredKeys.forEach((k) => console.log(`  - ${k}`));
+    } catch (e: unknown) {
+      console.error(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+    }
+  });
