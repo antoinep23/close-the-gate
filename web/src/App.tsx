@@ -18,6 +18,7 @@ import type { FileItem } from './data/mockFiles';
 import { openFile, deleteKey, openDownloadFolder } from './services/api';
 import { BackupKeysModal } from './components/BackupKeysModal';
 import { RotateKeyModal } from './components/RotateKeyModal';
+import { PreviewModal } from './components/PreviewModal';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
@@ -40,6 +41,7 @@ function App() {
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
   const [backupOpen, setBackupOpen] = useState(false);
   const [rotateFile, setRotateFile] = useState<{ fileName: string; keyName: string } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ fileName: string; keyName: string } | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
   const { files, loading, error, updateFileStar, refetch } = useFiles();
@@ -262,6 +264,7 @@ function App() {
               onDeleteLocalSuccess={activeSection === 'downloaded' ? onDeleteLocalSuccess : undefined}
               onDeleteLocalError={activeSection === 'downloaded' ? onDeleteLocalError : undefined}
               onRotateClick={activeSection !== 'downloaded' ? (fileName, keyName) => setRotateFile({ fileName, keyName }) : undefined}
+              onPreviewClick={activeSection !== 'downloaded' ? (fileName, keyName) => setPreviewFile({ fileName, keyName }) : undefined}
               onProtectionChange={activeSection !== 'downloaded' ? () => refetch() : undefined}
               hideDownload={activeSection === 'downloaded'}
             />
@@ -313,6 +316,13 @@ function App() {
         onClose={() => setRotateFile(null)}
         onSuccess={onRotateSuccess}
         onError={onRotateError}
+      />
+      <PreviewModal
+        isOpen={!!previewFile}
+        fileName={previewFile?.fileName || ''}
+        keyName={previewFile?.keyName || ''}
+        onClose={() => setPreviewFile(null)}
+        onError={(fileName, err) => addToast('error', `Preview failed for "${fileName}": ${err}`)}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>

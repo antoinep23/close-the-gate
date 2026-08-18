@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { downloadFile, toggleStar, deleteFile, deleteLocalFile, toggleProtection } from '../services/api';
@@ -16,11 +16,12 @@ interface FileRowProps {
   onDeleteLocalSuccess?: (fileName: string) => void;
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
+  onPreviewClick?: (fileName: string, keyName: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onProtectionChange, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onProtectionChange, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -131,6 +132,18 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         </td>
         <td className="py-2.5 text-sm text-gray-500">{formatDate(file.uploadDate)}</td>
         <td className="py-2.5 text-sm text-gray-500">{formatSize(file.size)}</td>
+        {onPreviewClick && (
+          <td className="py-2.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+              aria-label={`Preview ${file.fileName}`}
+              title="Preview"
+            >
+              <AiOutlineEye className="w-4 h-4 text-gray-500" />
+            </button>
+          </td>
+        )}
         {!hideDownload && (
           <td className="py-2.5">
             <button
