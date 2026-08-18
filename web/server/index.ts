@@ -44,6 +44,16 @@ app.get('/api/settings', (_req, res) => {
 app.put('/api/settings', (req, res) => {
   try {
     const settings = req.body;
+
+    // Validate autoRotation.intervalDays if present
+    if (settings.autoRotation && settings.autoRotation.enabled) {
+      const interval = settings.autoRotation.intervalDays;
+      if (typeof interval !== 'number' || interval < 1 || interval > 365) {
+        res.status(400).json({ error: 'intervalDays must be between 1 and 365' });
+        return;
+      }
+    }
+
     fs.writeFileSync(configPath, JSON.stringify(settings, null, 2) + '\n');
     res.json(settings);
   } catch (err) {

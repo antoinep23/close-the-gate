@@ -18,7 +18,11 @@ The software is developped using TypeScript over Node.js.
 - AES-256-GCM file encryption using random Initialization Vectors (IV)
 - HMAC SHA-256 file name hashing
 - Secure payload structure for S3 upload (IV + Ciphertext)
+- Multipart S3 upload with real-time progress tracking
 - DynamoDB integration for metadata tracking
+- Key rotation (manual per-file or automatic batch)
+- Auto key rotation with configurable interval and auto-generated keys
+- Password-protected key backup and restore (PBKDF2 + AES-256-GCM)
 
 ## Prerequisites
 
@@ -66,6 +70,13 @@ npm run web
 ```
 
 Then open your browser at the indicated URL. From the interface you can manage your keys, upload, download, and delete encrypted files visually.
+
+The web interface also provides:
+- Real-time upload progress bar (transfer + server-side encryption + S3 upload)
+- Key rotation (per-file or automatic batch rotation)
+- Auto key rotation with configurable interval (Settings > Auto Key Rotation)
+- Password-protected key backup and restore
+- Sortable file list by date and size
 
 ![Close the Gate Web UI](resources/screen_ui.png)
 
@@ -143,6 +154,32 @@ ctg delete-key -n my-secret-key.pem
 
 - **`-n, --key-name <keyName>`** _(Required)_: Name of the key file to delete.
 - **`-P, --key-path <keyPath>`**: Custom path for the key directory.
+
+#### Backup Keys
+
+Creates a password-protected encrypted backup of all keys.
+
+```bash
+ctg backup-keys -p "my-strong-password"
+```
+
+- **`-p, --password <password>`** _(Required)_: Password to encrypt the backup.
+- **`-P, --key-path <keyPath>`**: Custom path for the keys directory.
+- **`-o, --output <outputPath>`**: Custom output directory (default: keys directory).
+
+The backup file (`.ctg-backup`) is encrypted with AES-256-GCM using a key derived from the password via PBKDF2 (600k iterations, SHA-512).
+
+#### Restore Keys
+
+Restores keys from a password-protected backup file.
+
+```bash
+ctg restore-keys -p "my-strong-password" -f ./keys/ctg-backup-2026-08-17.ctg-backup
+```
+
+- **`-p, --password <password>`** _(Required)_: Password used during backup.
+- **`-f, --file <backupFile>`** _(Required)_: Path to the `.ctg-backup` file.
+- **`-P, --key-path <keyPath>`**: Custom path for the keys directory.
 
 ### 3. Programmatic Usage (SDK / TypeScript)
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
+import { RotationBanner } from './components/RotationBanner';
 import { SettingsModal } from './components/SettingsModal';
 import { UploadModal } from './components/UploadModal';
 import { KeyGenModal } from './components/KeyGenModal';
@@ -163,7 +164,8 @@ function App() {
   const onRotateSuccess = useCallback((fileName: string) => {
     addToast('success', `Key rotated for "${fileName}"`);
     refetch();
-  }, [addToast, refetch]);
+    refetchKeys();
+  }, [addToast, refetch, refetchKeys]);
 
   const onRotateError = useCallback((fileName: string, err: string) => {
     addToast('error', `Key rotation failed for "${fileName}": ${err}`);
@@ -238,6 +240,10 @@ function App() {
               </span>
             )}
           </div>
+          <RotationBanner
+            onRotateComplete={() => { refetch(); refetchKeys(); addToast('success', 'Key rotation completed'); }}
+            onError={(err) => addToast('error', err)}
+          />
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
@@ -264,6 +270,7 @@ function App() {
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         settings={settings}
+        keys={keys}
         onSettingsChange={handleSaveSettings}
       />
       <UploadModal
