@@ -291,3 +291,19 @@ export async function rotateKey(fileName: string, currentKeyName: string, newKey
 
   return { success: true };
 }
+
+export async function toggleProtection(fileName: string, isProtected: boolean): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`/api/files/${encodeURIComponent(fileName)}/protect`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isProtected }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to update protection' };
+  }
+
+  return { success: true };
+}

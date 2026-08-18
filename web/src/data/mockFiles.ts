@@ -3,5 +3,6 @@ export interface FileItem {
   size: number;
   uploadDate: string;
   isStarred: boolean;
+  isProtected: boolean;
   keyName: string;
 }
