@@ -62,6 +62,85 @@ router.post('/download', async (req, res) => {
 });
 
 /**
+ * POST /api/preview
+ * Body: { fileName: string, keyName: string }
+ *
+ * Downloads and decrypts a file in memory, returns the raw content
+ * with appropriate Content-Type. No disk write.
+ */
+router.post('/preview', async (req, res) => {
+  const { fileName, keyName } = req.body;
+
+  if (!fileName || !keyName) {
+    res.status(400).json({ error: 'fileName and keyName are required' });
+    return;
+  }
+
+  const settings = getSettings();
+  const keysPath = resolveFromRoot(settings.keysPath);
+
+  try {
+    const key = new Key();
+    key.retrieve(keyName, keysPath);
+
+    const file = new File();
+    const buffer = await file.preview(fileName, key);
+
+    // Determine content type from extension
+    const contentType = getContentType(fileName);
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'inline');
+    res.send(buffer);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Preview error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+function getContentType(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  const mimeMap: Record<string, string> = {
+    // Images
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    svg: 'image/svg+xml',
+    bmp: 'image/bmp',
+    ico: 'image/x-icon',
+    // Video
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    ogg: 'video/ogg',
+    mov: 'video/quicktime',
+    // Audio
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    flac: 'audio/flac',
+    // Documents
+    pdf: 'application/pdf',
+    // Text
+    txt: 'text/plain',
+    md: 'text/plain',
+    json: 'application/json',
+    csv: 'text/csv',
+    xml: 'text/xml',
+    html: 'text/html',
+    css: 'text/css',
+    js: 'text/javascript',
+    ts: 'text/plain',
+    py: 'text/plain',
+    sh: 'text/plain',
+    yml: 'text/plain',
+    yaml: 'text/plain',
+    log: 'text/plain',
+  };
+  return mimeMap[ext] || 'application/octet-stream';
+}
+
+/**
  * DELETE /api/files/:fileName
  * Body: { keyName: string }
  *

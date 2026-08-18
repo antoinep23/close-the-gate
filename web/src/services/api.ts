@@ -307,3 +307,25 @@ export async function toggleProtection(fileName: string, isProtected: boolean): 
 
   return { success: true };
 }
+
+export async function previewFile(fileName: string, keyName: string): Promise<{ success: boolean; blob?: Blob; contentType?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName, keyName }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      return { success: false, error: data.error || 'Preview failed' };
+    }
+
+    const contentType = res.headers.get('Content-Type') || 'application/octet-stream';
+    const blob = await res.blob();
+
+    return { success: true, blob, contentType };
+  } catch {
+    return { success: false, error: 'Network error' };
+  }
+}

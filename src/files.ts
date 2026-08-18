@@ -233,6 +233,40 @@ export default class File {
         }
     }
 
+    /**
+     * Download and decrypt a file in memory without writing to disk.
+     * Returns the raw decrypted Buffer.
+     */
+    public async preview(fileName: string, key: Key): Promise<Buffer> {
+        this.key = key;
+        this.fileName = fileName;
+
+        if (!this.key || !this.fileName) {
+            throw new Error("Impossible to preview the file as arguments are missing");
+        }
+
+        this.signName();
+
+        const command = new GetObjectCommand({
+            Bucket: this.bucketName,
+            Key: this.hashName!,
+        });
+
+        try {
+            const response = await this.s3Client.send(command);
+            const chunks: Uint8Array[] = [];
+            for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+                chunks.push(chunk);
+            }
+            const encryptedData = Buffer.concat(chunks);
+            const decryptedData = this.decrypt(encryptedData);
+
+            return decryptedData;
+        } catch (e: unknown) {
+            throw new Error(`Error while previewing from cloud bucket - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
+        }
+    }
+
     private decrypt(encryptedData: Buffer): Buffer {
         if (!this.key?.material) {
             throw new Error("Decryption is not possible as the key material is missing");
