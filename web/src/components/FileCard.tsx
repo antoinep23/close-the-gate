@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { downloadFile, toggleStar, deleteFile, deleteLocalFile } from '../services/api';
@@ -15,10 +15,11 @@ interface FileCardProps {
   onDeleteError?: (fileName: string, error: string) => void;
   onDeleteLocalSuccess?: (fileName: string) => void;
   onDeleteLocalError?: (fileName: string, error: string) => void;
+  onRotateClick?: (fileName: string, keyName: string) => void;
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, hideDownload }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -122,6 +123,16 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
               ) : (
                 <AiOutlineDownload className="w-4 h-4 text-gray-500" />
               )}
+            </button>
+          )}
+          {onRotateClick && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              aria-label={`Rotate key for ${file.fileName}`}
+              title="Rotate key"
+            >
+              <AiOutlineSync className="w-4 h-4 text-gray-500" />
             </button>
           )}
           <button

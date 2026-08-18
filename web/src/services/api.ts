@@ -275,3 +275,19 @@ export async function listBackups(): Promise<{ fileName: string; createdAt: numb
 
   return await res.json();
 }
+
+export async function rotateKey(fileName: string, currentKeyName: string, newKeyName: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch('/api/files/rotate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName, currentKeyName, newKeyName }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Key rotation failed' };
+  }
+
+  return { success: true };
+}

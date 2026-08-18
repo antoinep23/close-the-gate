@@ -92,4 +92,53 @@ router.delete('/files/:fileName', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/files/rotate
+ * Body: { fileName: string, currentKeyName: string, newKeyName: string }
+ *
+ * Downloads and decrypts with the current key, then re-encrypts and uploads with the new key.
+ */
+router.post('/files/rotate', async (req, res) => {
+  const { fileName, currentKeyName, newKeyName } = req.body;
+
+  if (!fileName || !currentKeyName || !newKeyName) {
+    res.status(400).json({ error: 'fileName, currentKeyName, and newKeyName are required' });
+    return;
+  }
+
+  if (currentKeyName === newKeyName) {
+    res.status(400).json({ error: 'New key must be different from the current key' });
+    return;
+  }
+
+  const settings = getSettings();
+  const keysPath = resolveFromRoot(settings.keysPath);
+  const filesPath = resolveFromRoot(settings.filesPath);
+
+  try {
+    // 1. Download & decrypt with current key
+    const currentKey = new Key();
+    currentKey.retrieve(currentKeyName, keysPath);
+
+    const file = new File();
+    await file.download(fileName, currentKey, filesPath);
+
+    // 2. Delete old encrypted version from S3 + DynamoDB
+    await file.delete(fileName, currentKey);
+
+    // 3. Re-encrypt and upload with new key
+    const newKey = new Key();
+    newKey.retrieve(newKeyName, keysPath);
+
+    const uploadFile = new File();
+    await uploadFile.upload(fileName, newKey, filesPath);
+
+    res.json({ success: true, message: `Key rotated for "${fileName}"` });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Rotate error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
 export default router;

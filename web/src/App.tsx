@@ -16,6 +16,7 @@ import type { FileCategory } from './utils/fileIcons';
 import type { FileItem } from './data/mockFiles';
 import { openFile, deleteKey, openDownloadFolder } from './services/api';
 import { BackupKeysModal } from './components/BackupKeysModal';
+import { RotateKeyModal } from './components/RotateKeyModal';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
@@ -37,6 +38,7 @@ function App() {
   const [keyGenOpen, setKeyGenOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [rotateFile, setRotateFile] = useState<{ fileName: string; keyName: string } | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
   const { files, loading, error, updateFileStar, refetch } = useFiles();
@@ -158,6 +160,15 @@ function App() {
     addToast('error', `Restore failed: ${err}`);
   }, [addToast]);
 
+  const onRotateSuccess = useCallback((fileName: string) => {
+    addToast('success', `Key rotated for "${fileName}"`);
+    refetch();
+  }, [addToast, refetch]);
+
+  const onRotateError = useCallback((fileName: string, err: string) => {
+    addToast('error', `Key rotation failed for "${fileName}": ${err}`);
+  }, [addToast]);
+
   const handleDeleteKey = useCallback(async () => {
     if (!keyToDelete) return;
     const result = await deleteKey(keyToDelete);
@@ -243,6 +254,7 @@ function App() {
               onDeleteError={onDeleteError}
               onDeleteLocalSuccess={activeSection === 'downloaded' ? onDeleteLocalSuccess : undefined}
               onDeleteLocalError={activeSection === 'downloaded' ? onDeleteLocalError : undefined}
+              onRotateClick={activeSection !== 'downloaded' ? (fileName, keyName) => setRotateFile({ fileName, keyName }) : undefined}
               hideDownload={activeSection === 'downloaded'}
             />
           )}
@@ -283,6 +295,15 @@ function App() {
         onBackupError={onBackupError}
         onRestoreSuccess={onRestoreSuccess}
         onRestoreError={onRestoreError}
+      />
+      <RotateKeyModal
+        isOpen={!!rotateFile}
+        fileName={rotateFile?.fileName || ''}
+        currentKeyName={rotateFile?.keyName || ''}
+        keys={keys}
+        onClose={() => setRotateFile(null)}
+        onSuccess={onRotateSuccess}
+        onError={onRotateError}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>

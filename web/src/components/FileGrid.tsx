@@ -17,6 +17,7 @@ interface FileGridProps {
   onDeleteError?: (fileName: string, error: string) => void;
   onDeleteLocalSuccess?: (fileName: string) => void;
   onDeleteLocalError?: (fileName: string, error: string) => void;
+  onRotateClick?: (fileName: string, keyName: string) => void;
   hideDownload?: boolean;
 }
 
@@ -42,7 +43,7 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, hideDownload }: FileGridProps) {
+export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, hideDownload }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -105,6 +106,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
               </th>
               <th className="pb-2 font-medium w-10"></th>
               {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
+              {onRotateClick && <th className="pb-2 font-medium w-10"></th>}
               <th className="pb-2 font-medium w-10"></th>
             </tr>
           </thead>
@@ -121,6 +123,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                 onDeleteError={onDeleteError}
                 onDeleteLocalSuccess={onDeleteLocalSuccess}
                 onDeleteLocalError={onDeleteLocalError}
+                onRotateClick={onRotateClick}
                 hideDownload={hideDownload}
               />
             ))}
@@ -132,7 +135,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {sortedFiles.map((file) => (
           <FileCard
             key={file.fileName}
@@ -145,6 +148,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
             onDeleteError={onDeleteError}
             onDeleteLocalSuccess={onDeleteLocalSuccess}
             onDeleteLocalError={onDeleteLocalError}
+            onRotateClick={onRotateClick}
             hideDownload={hideDownload}
           />
         ))}
