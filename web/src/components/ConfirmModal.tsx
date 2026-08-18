@@ -31,7 +31,7 @@ export function ConfirmModal({ isOpen, title, message, confirmLabel = 'Delete', 
         {confirmText && (
           <div className="mb-6">
             <label className="block text-sm text-gray-600 mb-1">
-              Type <span className="font-mono font-medium text-red-600">{confirmText}</span> to confirm
+              Type <span className="text-red-600">{confirmText}</span> to confirm
             </label>
             <input
               type="text"

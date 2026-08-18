@@ -2,5 +2,10 @@
   "keysPath": "./keys",
   "filesPath": "./files",
   "downloadPath": "./download",
-  "region": "eu-west-1"
+  "region": "eu-west-1",
+  "autoRotation": {
+    "enabled": true,
+    "intervalDays": 90,
+    "targetKey": "__auto_generate__"
+  }
 }

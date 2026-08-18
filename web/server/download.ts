@@ -123,15 +123,15 @@ router.post('/files/rotate', async (req, res) => {
     const file = new File();
     await file.download(fileName, currentKey, filesPath);
 
-    // 2. Delete old encrypted version from S3 + DynamoDB
-    await file.delete(fileName, currentKey);
-
-    // 3. Re-encrypt and upload with new key
+    // 2. Re-encrypt and upload with new key FIRST
     const newKey = new Key();
     newKey.retrieve(newKeyName, keysPath);
 
     const uploadFile = new File();
     await uploadFile.upload(fileName, newKey, filesPath);
+
+    // 3. Delete old S3 object only (DynamoDB already updated by upload)
+    await file.deleteS3Object(fileName, currentKey);
 
     res.json({ success: true, message: `Key rotated for "${fileName}"` });
   } catch (err: unknown) {
@@ -139,6 +139,141 @@ router.post('/files/rotate', async (req, res) => {
     console.error('Rotate error:', message);
     res.status(500).json({ error: message });
   }
+});
+
+/**
+ * GET /api/files/rotation-check
+ * Reads autoRotation settings, scans DynamoDB for files whose uploadDate
+ * exceeds the interval, and returns the list of eligible files.
+ */
+router.get('/files/rotation-check', async (_req, res) => {
+  try {
+    const settings = getSettings();
+    const { autoRotation } = settings;
+
+    if (!autoRotation || !autoRotation.enabled) {
+      res.json({ eligible: [], count: 0, enabled: false });
+      return;
+    }
+
+    const { intervalDays, targetKey } = autoRotation;
+    if (!targetKey) {
+      res.json({ eligible: [], count: 0, enabled: true, error: 'No target key configured' });
+      return;
+    }
+
+    // Scan DynamoDB for all files
+    const { DynamoDBClient, ScanCommand } = await import('@aws-sdk/client-dynamodb');
+    const { unmarshall } = await import('@aws-sdk/util-dynamodb');
+
+    const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+    const tableName = process.env.DYNAMO_TABLE!;
+
+    const result = await dynamoClient.send(new ScanCommand({ TableName: tableName }));
+    const now = Date.now();
+    const thresholdMs = intervalDays * 24 * 60 * 60 * 1000;
+
+    const isAutoGenerate = targetKey === '__auto_generate__';
+
+    const eligible = (result.Items || [])
+      .map((item) => unmarshall(item))
+      .filter((record) => {
+        const uploadTime = new Date(record.uploadDate).getTime();
+        const age = now - uploadTime;
+        // Eligible if older than threshold AND not already using the target key
+        // For auto-generate, all old files are eligible
+        return age >= thresholdMs && (isAutoGenerate || record.keyName !== targetKey);
+      })
+      .map((record) => ({
+        fileName: record.fileName as string,
+        keyName: record.keyName as string,
+        uploadDate: record.uploadDate as string,
+      }));
+
+    res.json({ eligible, count: eligible.length, enabled: true, targetKey });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Rotation check error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/files/rotate-batch
+ * Body: { files: Array<{ fileName, keyName }>, targetKey: string }
+ *
+ * Rotates all specified files sequentially to the target key.
+ * Returns results for each file (success or error).
+ */
+router.post('/files/rotate-batch', async (req, res) => {
+  const { files, targetKey } = req.body;
+
+  if (!files || !Array.isArray(files) || !targetKey) {
+    res.status(400).json({ error: 'files (array) and targetKey are required' });
+    return;
+  }
+
+  const settings = getSettings();
+  const keysPath = resolveFromRoot(settings.keysPath);
+  const filesPath = resolveFromRoot(settings.filesPath);
+
+  // If auto-generate, create a new key before rotating
+  let actualTargetKey = targetKey;
+  if (targetKey === '__auto_generate__') {
+    const date = new Date().toISOString().slice(0, 10);
+    const prefix = `auto-rotation-${date}`;
+
+    // Find next available increment
+    const existingKeys = fs.existsSync(keysPath) ? fs.readdirSync(keysPath) : [];
+    let increment = 1;
+    while (existingKeys.includes(`${prefix}_${increment}.pem`)) {
+      increment++;
+    }
+
+    const keyName = `${prefix}_${increment}`;
+    const autoKey = new Key();
+    autoKey.generate(32, keyName, keysPath);
+    actualTargetKey = `${keyName}.pem`;
+  }
+
+  const results: Array<{ fileName: string; success: boolean; error?: string }> = [];
+
+  for (const entry of files) {
+    const { fileName, keyName } = entry;
+
+    if (keyName === actualTargetKey) {
+      results.push({ fileName, success: true });
+      continue;
+    }
+
+    try {
+      // Download & decrypt with current key
+      const currentKey = new Key();
+      currentKey.retrieve(keyName, keysPath);
+
+      const file = new File();
+      await file.download(fileName, currentKey, filesPath);
+
+      // Re-encrypt and upload with new key FIRST (before deleting old)
+      const newKey = new Key();
+      newKey.retrieve(actualTargetKey, keysPath);
+
+      const uploadFile = new File();
+      await uploadFile.upload(fileName, newKey, filesPath);
+
+      // Only delete old S3 object after successful upload (DynamoDB already updated)
+      await file.deleteS3Object(fileName, currentKey);
+
+      results.push({ fileName, success: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`Rotate batch error for "${fileName}":`, message);
+      results.push({ fileName, success: false, error: message });
+    }
+  }
+
+  const successCount = results.filter((r) => r.success).length;
+  res.json({ success: true, results, rotated: successCount, total: files.length, targetKey: actualTargetKey });
 });
 
 export default router;

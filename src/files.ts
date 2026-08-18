@@ -287,6 +287,37 @@ export default class File {
         }
     }
 
+    /**
+     * Delete only the S3 object (without touching DynamoDB).
+     * Used during key rotation where the new upload already updated DynamoDB.
+     */
+    public async deleteS3Object(fileName: string, key: Key): Promise<string> {
+        this.fileName = fileName;
+        this.key = key;
+
+        if (!this.key || !this.fileName) {
+            throw new Error("Impossible to delete the S3 object as arguments are missing");
+        }
+
+        this.signName();
+
+        if (!this.hashName) {
+            throw new Error("Impossible to delete the S3 object as the hash name is not present");
+        }
+
+        try {
+            const s3Command = new DeleteObjectCommand({
+                Bucket: this.bucketName,
+                Key: this.hashName,
+            });
+            await this.s3Client.send(s3Command);
+
+            return "S3 object deleted successfully";
+        } catch (e: unknown) {
+            throw new Error(`Error while deleting S3 object - ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
+        }
+    }
+
     private configureDirPath(customDir: string = "files"): string {
         const path = this.customPath != null ? this.customPath : join(process.cwd(), customDir);
         this.localPath = path;

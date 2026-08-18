@@ -1,20 +1,28 @@
 import { AiOutlineClose } from 'react-icons/ai';
 
+export interface AutoRotationSettings {
+  enabled: boolean;
+  intervalDays: number;
+  targetKey: string;
+}
+
 export interface PathSettings {
   keysPath: string;
   filesPath: string;
   downloadPath: string;
   region: string;
+  autoRotation: AutoRotationSettings;
 }
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   settings: PathSettings;
+  keys: string[];
   onSettingsChange: (settings: PathSettings) => void;
 }
 
-export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChange }: SettingsModalProps) {
   if (!isOpen) return null;
 
   const fields = [
@@ -23,10 +31,19 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
     { key: 'downloadPath' as const, label: 'Download Path', placeholder: './download' },
   ];
 
+  const autoRotation = settings.autoRotation || { enabled: false, intervalDays: 90, targetKey: '' };
+
+  function updateAutoRotation(patch: Partial<AutoRotationSettings>) {
+    onSettingsChange({
+      ...settings,
+      autoRotation: { ...autoRotation, ...patch },
+    });
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose}></div>
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-medium text-gray-800">Settings</h2>
           <button
@@ -57,9 +74,93 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
           ))}
         </div>
 
-        <p className="text-xs text-gray-400 mt-4">
+        <p className="text-xs text-gray-400 mt-4 mb-6">
           Paths are relative to the project root or absolute.
         </p>
+
+        {/* Auto Key Rotation */}
+        <div className="border-t border-gray-200 pt-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-800">Auto Key Rotation</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Automatically rotate encryption keys after a set period</p>
+            </div>
+            <button
+              onClick={() => updateAutoRotation({ enabled: !autoRotation.enabled })}
+              className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${
+                autoRotation.enabled ? 'bg-blue-600' : 'bg-gray-300'
+              }`}
+              role="switch"
+              aria-checked={autoRotation.enabled}
+              aria-label="Toggle auto key rotation"
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  autoRotation.enabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {autoRotation.enabled && (
+            <div className="space-y-4 pl-0">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rotation interval (days)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={autoRotation.intervalDays}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val)) updateAutoRotation({ intervalDays: val });
+                  }}
+                  className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 transition-all ${
+                    autoRotation.intervalDays >= 1 && autoRotation.intervalDays <= 365
+                      ? 'border-gray-300 focus:ring-blue-200 focus:border-blue-400'
+                      : 'border-red-300 focus:ring-red-200 focus:border-red-400'
+                  }`}
+                />
+                <p className={`text-xs mt-1 ${
+                  autoRotation.intervalDays >= 1 && autoRotation.intervalDays <= 365
+                    ? 'text-gray-400'
+                    : 'text-red-500'
+                }`}>
+                  {autoRotation.intervalDays >= 1 && autoRotation.intervalDays <= 365
+                    ? 'Files older than this will be flagged for rotation'
+                    : 'Must be between 1 and 365 days'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Target key
+                </label>
+                {keys.length === 0 ? (
+                  <p className="text-sm text-red-500">No keys available. Generate one first.</p>
+                ) : (
+                  <select
+                    value={autoRotation.targetKey}
+                    onChange={(e) => updateAutoRotation({ targetKey: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                  >
+                    <option value="__auto_generate__">Auto-generate new key</option>
+                    {keys.map((k) => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-xs text-gray-400 mt-1">
+                  {autoRotation.targetKey === '__auto_generate__'
+                    ? 'A new key will be generated at each rotation'
+                    : 'All eligible files will be rotated to this key'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
