@@ -396,6 +396,32 @@ app.patch('/api/files/:fileName/star', async (req, res) => {
   }
 });
 
+// --- Toggle deletion protection endpoint ---
+
+app.patch('/api/files/:fileName/protect', async (req, res) => {
+  const { fileName } = req.params;
+  const { isProtected } = req.body;
+
+  if (typeof isProtected !== 'boolean') {
+    res.status(400).json({ error: 'isProtected (boolean) is required' });
+    return;
+  }
+
+  try {
+    const command = new UpdateItemCommand({
+      TableName: tableName,
+      Key: { fileName: { S: fileName } },
+      UpdateExpression: 'SET isProtected = :protected',
+      ExpressionAttributeValues: { ':protected': { BOOL: isProtected } },
+    });
+    await dynamoClient.send(command);
+    res.json({ success: true, fileName, isProtected });
+  } catch (err) {
+    console.error('Toggle protection error:', err);
+    res.status(500).json({ error: 'Failed to update protection status' });
+  }
+});
+
 app.get('/api/files', async (_req, res) => {
   try {
     const result = await dynamoClient.send(
@@ -409,6 +435,7 @@ app.get('/api/files', async (_req, res) => {
         size: Number(record.size),
         uploadDate: record.uploadDate,
         isStarred: Boolean(record.isStarred),
+        isProtected: Boolean(record.isProtected),
         keyName: record.keyName
       };
     });

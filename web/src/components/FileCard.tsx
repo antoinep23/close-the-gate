@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
-import { downloadFile, toggleStar, deleteFile, deleteLocalFile } from '../services/api';
+import { downloadFile, toggleStar, deleteFile, deleteLocalFile, toggleProtection } from '../services/api';
 import { ConfirmModal } from './ConfirmModal';
 
 interface FileCardProps {
@@ -16,15 +16,18 @@ interface FileCardProps {
   onDeleteLocalSuccess?: (fileName: string) => void;
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
+  onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, hideDownload }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onProtectionChange, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const [starred, setStarred] = useState(file.isStarred);
+  const [protected_, setProtected] = useState(file.isProtected);
 
   const isLocalDelete = !!onDeleteLocalSuccess;
 
@@ -52,6 +55,32 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       onStarToggle?.(file.fileName, newValue);
     } else {
       setStarred(!newValue);
+    }
+  }
+
+  async function handleLock(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (protected_) {
+      setUnlockOpen(true);
+    } else {
+      setProtected(true);
+      const result = await toggleProtection(file.fileName, true);
+      if (result.success) {
+        onProtectionChange?.(file.fileName, true);
+      } else {
+        setProtected(false);
+      }
+    }
+  }
+
+  async function confirmUnlock() {
+    setUnlockOpen(false);
+    setProtected(false);
+    const result = await toggleProtection(file.fileName, false);
+    if (result.success) {
+      onProtectionChange?.(file.fileName, false);
+    } else {
+      setProtected(true);
     }
   }
 
@@ -98,18 +127,6 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         <Icon className={`w-6 h-6 flex-shrink-0 ${color}`} />
         <span className="text-sm text-gray-800 truncate flex-1">{file.fileName}</span>
         <div className="flex items-center gap-1">
-          {!isLocalDelete && (
-            <button
-              onClick={handleStar}
-              className={`p-1 rounded-full cursor-pointer transition-all ${
-                starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-yellow-400'
-              }`}
-              aria-label={starred ? 'Unstar' : 'Star'}
-              title={starred ? 'Unstar' : 'Star'}
-            >
-              {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
-            </button>
-          )}
           {!hideDownload && (
             <button
               onClick={handleDownload}
@@ -128,26 +145,58 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
           {onRotateClick && (
             <button
               onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-blue-100 cursor-pointer transition-all"
               aria-label={`Rotate key for ${file.fileName}`}
               title="Rotate key"
             >
               <AiOutlineSync className="w-4 h-4 text-gray-500" />
             </button>
           )}
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
-            aria-label={`Delete ${file.fileName}`}
-            title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
-          >
-            {deleting ? (
-              <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
-            ) : (
-              <AiOutlineDelete className="w-4 h-4 text-red-500" />
-            )}
-          </button>
+          {!isLocalDelete && (
+            <button
+              onClick={handleStar}
+              className={`p-1 rounded-full cursor-pointer transition-all ${
+                starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:text-yellow-400'
+              }`}
+              aria-label={starred ? 'Unstar' : 'Star'}
+              title={starred ? 'Unstar' : 'Star'}
+            >
+              {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
+            </button>
+          )}
+          {!isLocalDelete && (
+            <button
+              onClick={handleLock}
+              className={`p-1 rounded-full cursor-pointer transition-all ${
+                protected_
+                  ? 'text-amber-500 hover:bg-amber-100'
+                  : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-200'
+              }`}
+              aria-label={protected_ ? 'Unlock deletion' : 'Lock deletion'}
+              title={protected_ ? 'Remove deletion protection' : 'Protect from deletion'}
+            >
+              {protected_ ? <AiOutlineLock className="w-4 h-4" /> : <AiOutlineUnlock className="w-4 h-4" />}
+            </button>
+          )}
+          {!protected_ ? (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+              aria-label={`Delete ${file.fileName}`}
+              title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
+            >
+              {deleting ? (
+                <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
+              ) : (
+                <AiOutlineDelete className="w-4 h-4 text-red-500" />
+              )}
+            </button>
+          ) : (
+            <span className="p-1 inline-block" title="Deletion protected">
+              <AiOutlineDelete className="opacity-0 group-hover:opacity-100 w-4 h-4 text-gray-200" />
+            </span>
+          )}
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
@@ -164,6 +213,15 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         confirmLabel={isLocalDelete ? 'Remove' : 'Delete'}
         onConfirm={confirmDelete}
         onCancel={() => setConfirmOpen(false)}
+      />
+      <ConfirmModal
+        isOpen={unlockOpen}
+        title="Remove deletion protection"
+        message={`This file is protected from deletion. To remove protection, type the confirmation text below.`}
+        confirmLabel="Unlock"
+        confirmText={`unlock ${file.fileName}`}
+        onConfirm={confirmUnlock}
+        onCancel={() => setUnlockOpen(false)}
       />
     </div>
   );

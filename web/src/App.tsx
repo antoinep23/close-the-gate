@@ -67,6 +67,7 @@ function App() {
           size: f.size,
           uploadDate: new Date(f.downloadedAt).toISOString(),
           isStarred: false,
+          isProtected: false,
           keyName: '',
         }))
       );
@@ -261,6 +262,7 @@ function App() {
               onDeleteLocalSuccess={activeSection === 'downloaded' ? onDeleteLocalSuccess : undefined}
               onDeleteLocalError={activeSection === 'downloaded' ? onDeleteLocalError : undefined}
               onRotateClick={activeSection !== 'downloaded' ? (fileName, keyName) => setRotateFile({ fileName, keyName }) : undefined}
+              onProtectionChange={activeSection !== 'downloaded' ? () => refetch() : undefined}
               hideDownload={activeSection === 'downloaded'}
             />
           )}

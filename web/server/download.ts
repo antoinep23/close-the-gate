@@ -2,6 +2,8 @@ import path from 'path';
 import fs from 'fs';
 import { Router } from 'express';
 import { fileURLToPath } from 'url';
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
 
@@ -72,6 +74,27 @@ router.delete('/files/:fileName', async (req, res) => {
   if (!fileName || !keyName) {
     res.status(400).json({ error: 'fileName and keyName are required' });
     return;
+  }
+
+  // Check deletion protection
+  try {
+    const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+    const getCommand = new GetItemCommand({
+      TableName: process.env.DYNAMO_TABLE!,
+      Key: { fileName: { S: fileName } },
+      ProjectionExpression: 'isProtected',
+    });
+    const record = await dynamoClient.send(getCommand);
+    if (record.Item) {
+      const item = unmarshall(record.Item);
+      if (item.isProtected) {
+        res.status(403).json({ error: 'File is deletion-protected. Remove protection first.' });
+        return;
+      }
+    }
+  } catch (err) {
+    console.error('Protection check error:', err);
+    // Continue with deletion if check fails (fail-open for DynamoDB read issues)
   }
 
   const settings = getSettings();

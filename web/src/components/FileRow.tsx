@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
-import { downloadFile, toggleStar, deleteFile, deleteLocalFile } from '../services/api';
+import { downloadFile, toggleStar, deleteFile, deleteLocalFile, toggleProtection } from '../services/api';
 import { ConfirmModal } from './ConfirmModal';
 
 interface FileRowProps {
@@ -16,15 +16,18 @@ interface FileRowProps {
   onDeleteLocalSuccess?: (fileName: string) => void;
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
+  onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onProtectionChange, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const [starred, setStarred] = useState(file.isStarred);
+  const [protected_, setProtected] = useState(file.isProtected);
 
   const isLocalDelete = !!onDeleteLocalSuccess;
 
@@ -52,6 +55,34 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
       onStarToggle?.(file.fileName, newValue);
     } else {
       setStarred(!newValue);
+    }
+  }
+
+  async function handleLock(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (protected_) {
+      // Open unlock confirm modal
+      setUnlockOpen(true);
+    } else {
+      // Lock immediately
+      setProtected(true);
+      const result = await toggleProtection(file.fileName, true);
+      if (result.success) {
+        onProtectionChange?.(file.fileName, true);
+      } else {
+        setProtected(false);
+      }
+    }
+  }
+
+  async function confirmUnlock() {
+    setUnlockOpen(false);
+    setProtected(false);
+    const result = await toggleProtection(file.fileName, false);
+    if (result.success) {
+      onProtectionChange?.(file.fileName, false);
+    } else {
+      setProtected(true);
     }
   }
 
@@ -100,20 +131,6 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         </td>
         <td className="py-2.5 text-sm text-gray-500">{formatDate(file.uploadDate)}</td>
         <td className="py-2.5 text-sm text-gray-500">{formatSize(file.size)}</td>
-        {!isLocalDelete && (
-          <td className="py-2.5">
-            <button
-              onClick={handleStar}
-              className={`p-1 rounded-full cursor-pointer transition-all ${
-                starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-yellow-400'
-              }`}
-              aria-label={starred ? 'Unstar' : 'Star'}
-              title={starred ? 'Unstar' : 'Star'}
-            >
-              {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
-            </button>
-          </td>
-        )}
         {!hideDownload && (
           <td className="py-2.5">
             <button
@@ -135,7 +152,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           <td className="py-2.5">
             <button
               onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-blue-100 cursor-pointer transition-all"
               aria-label={`Rotate key for ${file.fileName}`}
               title="Rotate key"
             >
@@ -143,20 +160,56 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             </button>
           </td>
         )}
+        {!isLocalDelete && (
+          <td className="py-2.5">
+            <button
+              onClick={handleStar}
+              className={`p-1 rounded-full cursor-pointer transition-all ${
+                starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:text-yellow-400'
+              }`}
+              aria-label={starred ? 'Unstar' : 'Star'}
+              title={starred ? 'Unstar' : 'Star'}
+            >
+              {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
+            </button>
+          </td>
+        )}
+        {!isLocalDelete && (
+          <td className="py-2.5">
+            <button
+              onClick={handleLock}
+              className={`p-1 rounded-full cursor-pointer transition-all ${
+                protected_
+                  ? 'text-amber-500 hover:bg-amber-100'
+                  : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-200'
+              }`}
+              aria-label={protected_ ? 'Unlock deletion' : 'Lock deletion'}
+              title={protected_ ? 'Remove deletion protection' : 'Protect from deletion'}
+            >
+              {protected_ ? <AiOutlineLock className="w-4 h-4" /> : <AiOutlineUnlock className="w-4 h-4" />}
+            </button>
+          </td>
+        )}
         <td className="py-2.5">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
-            aria-label={`Delete ${file.fileName}`}
-            title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
-          >
-            {deleting ? (
-              <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
-            ) : (
-              <AiOutlineDelete className="w-4 h-4 text-red-500" />
-            )}
-          </button>
+          {!protected_ ? (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+              aria-label={`Delete ${file.fileName}`}
+              title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
+            >
+              {deleting ? (
+                <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
+              ) : (
+                <AiOutlineDelete className="w-4 h-4 text-red-500" />
+              )}
+            </button>
+          ) : (
+            <span className="opacity-0 group-hover:opacity-100 px-1 mt-1 inline-block" title="Deletion protected">
+              <AiOutlineDelete className="w-4 h-4 text-gray-200" />
+            </span>
+          )}
         </td>
       </tr>
       <ConfirmModal
@@ -169,6 +222,15 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         confirmLabel={isLocalDelete ? 'Remove' : 'Delete'}
         onConfirm={confirmDelete}
         onCancel={() => setConfirmOpen(false)}
+      />
+      <ConfirmModal
+        isOpen={unlockOpen}
+        title="Remove deletion protection"
+        message={`This file is protected from deletion. To remove protection, type the confirmation text below.`}
+        confirmLabel="Unlock"
+        confirmText={`unlock ${file.fileName}`}
+        onConfirm={confirmUnlock}
+        onCancel={() => setUnlockOpen(false)}
       />
     </>
   );

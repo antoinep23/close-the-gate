@@ -18,6 +18,7 @@ interface FileGridProps {
   onDeleteLocalSuccess?: (fileName: string) => void;
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
+  onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   hideDownload?: boolean;
 }
 
@@ -43,7 +44,7 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, hideDownload }: FileGridProps) {
+export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onProtectionChange, hideDownload }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -104,9 +105,9 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                   <SortArrow field="size" activeField={sortField} direction={sortDirection} />
                 </span>
               </th>
-              <th className="pb-2 font-medium w-10"></th>
-              {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
               {onRotateClick && <th className="pb-2 font-medium w-10"></th>}
+              {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
+              <th className="pb-2 font-medium w-10"></th>
               <th className="pb-2 font-medium w-10"></th>
             </tr>
           </thead>
@@ -124,6 +125,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                 onDeleteLocalSuccess={onDeleteLocalSuccess}
                 onDeleteLocalError={onDeleteLocalError}
                 onRotateClick={onRotateClick}
+                onProtectionChange={onProtectionChange}
                 hideDownload={hideDownload}
               />
             ))}
@@ -149,6 +151,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
             onDeleteLocalSuccess={onDeleteLocalSuccess}
             onDeleteLocalError={onDeleteLocalError}
             onRotateClick={onRotateClick}
+            onProtectionChange={onProtectionChange}
             hideDownload={hideDownload}
           />
         ))}
