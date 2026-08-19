@@ -389,3 +389,19 @@ export async function moveFile(fileName: string, folder: string): Promise<{ succ
 
   return { success: true };
 }
+
+export async function moveFolderInto(sourceFolder: string, targetFolder: string): Promise<{ success: boolean; newPath?: string; error?: string }> {
+  const res = await fetch('/api/folders/move', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sourceFolder, targetFolder }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to move folder' };
+  }
+
+  return { success: true, newPath: data.newPath };
+}

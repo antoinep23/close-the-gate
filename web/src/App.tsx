@@ -247,6 +247,18 @@ function App() {
     }
   }, [addToast, refetch]);
 
+  const handleFolderDrop = useCallback(async (sourceFolder: string, targetFolder: string) => {
+    const { moveFolderInto } = await import('./services/api');
+    const result = await moveFolderInto(sourceFolder, targetFolder);
+    if (result.success) {
+      addToast('success', `Moved folder to ${result.newPath}`);
+      refetchFolders();
+      refetch();
+    } else {
+      addToast('error', `Failed to move folder: ${result.error}`);
+    }
+  }, [addToast, refetchFolders, refetch]);
+
   let displayFiles: FileItem[];
 
   if (activeSection === 'downloaded') {
@@ -345,6 +357,7 @@ function App() {
               onFolderClick={activeSection === 'my-drive' ? setCurrentFolder : undefined}
               onDeleteFolder={activeSection === 'my-drive' ? handleDeleteFolder : undefined}
               onFileDrop={activeSection === 'my-drive' ? handleFileDrop : undefined}
+              onFolderDrop={activeSection === 'my-drive' ? handleFolderDrop : undefined}
               hideDownload={activeSection === 'downloaded'}
             />
           )}

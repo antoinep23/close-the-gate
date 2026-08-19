@@ -549,6 +549,75 @@ app.patch('/api/files/:fileName/move', async (req, res) => {
   }
 });
 
+// --- Move folder into another folder ---
+
+app.post('/api/folders/move', async (req, res) => {
+  const { sourceFolder, targetFolder } = req.body;
+
+  if (!sourceFolder || !targetFolder) {
+    res.status(400).json({ error: 'sourceFolder and targetFolder are required' });
+    return;
+  }
+
+  if (sourceFolder === '/') {
+    res.status(400).json({ error: 'Cannot move root folder' });
+    return;
+  }
+
+  if (targetFolder.startsWith(sourceFolder + '/') || targetFolder === sourceFolder) {
+    res.status(400).json({ error: 'Cannot move a folder into itself' });
+    return;
+  }
+
+  // Compute new path: /target/sourceName
+  const sourceName = sourceFolder.split('/').pop()!;
+  const newPath = targetFolder === '/' ? `/${sourceName}` : `${targetFolder}/${sourceName}`;
+
+  try {
+    // Update config.json folders
+    const data = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const folders: string[] = data.folders || ['/'];
+
+    // Rename sourceFolder and all sub-folders
+    data.folders = folders.map((f: string) => {
+      if (f === sourceFolder) return newPath;
+      if (f.startsWith(sourceFolder + '/')) return newPath + f.slice(sourceFolder.length);
+      return f;
+    });
+    fs.writeFileSync(configPath, JSON.stringify(data, null, 2) + '\n');
+
+    // Update all files in DynamoDB that are in sourceFolder or sub-folders
+    const result = await dynamoClient.send(new ScanCommand({ TableName: tableName }));
+    const items = (result.Items || []).map((item) => unmarshall(item));
+
+    for (const item of items) {
+      const fileFolder = item.folder || '/';
+      let updatedFolder: string | null = null;
+
+      if (fileFolder === sourceFolder) {
+        updatedFolder = newPath;
+      } else if (fileFolder.startsWith(sourceFolder + '/')) {
+        updatedFolder = newPath + fileFolder.slice(sourceFolder.length);
+      }
+
+      if (updatedFolder) {
+        await dynamoClient.send(new UpdateItemCommand({
+          TableName: tableName,
+          Key: { fileName: { S: item.fileName } },
+          UpdateExpression: 'SET folder = :folder',
+          ExpressionAttributeValues: { ':folder': { S: updatedFolder } },
+        }));
+      }
+    }
+
+    res.json({ success: true, oldPath: sourceFolder, newPath });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Move folder error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`API server running on http://localhost:${port}`);
 });

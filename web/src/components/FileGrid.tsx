@@ -26,6 +26,7 @@ interface FileGridProps {
   onFolderClick?: (folder: string) => void;
   onDeleteFolder?: (folder: string) => void;
   onFileDrop?: (fileName: string, targetFolder: string) => void;
+  onFolderDrop?: (sourceFolder: string, targetFolder: string) => void;
   hideDownload?: boolean;
 }
 
@@ -51,7 +52,7 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onFileDrop, hideDownload }: FileGridProps) {
+export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onFileDrop, onFolderDrop, hideDownload }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
@@ -130,13 +131,20 @@ export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDow
                 <tr
                   key={`folder-${folder}`}
                   onClick={() => onFolderClick?.(folder)}
+                  draggable
+                  onDragStart={(e) => { e.dataTransfer.setData('application/x-folder', folder); e.dataTransfer.effectAllowed = 'move'; }}
                   onDragOver={(e) => { e.preventDefault(); setDragOverFolder(folder); }}
                   onDragLeave={() => setDragOverFolder(null)}
                   onDrop={(e) => {
                     e.preventDefault();
                     setDragOverFolder(null);
-                    const fileName = e.dataTransfer.getData('text/plain');
-                    if (fileName && onFileDrop) onFileDrop(fileName, folder);
+                    const droppedFolder = e.dataTransfer.getData('application/x-folder');
+                    if (droppedFolder && droppedFolder !== folder && onFolderDrop) {
+                      onFolderDrop(droppedFolder, folder);
+                    } else {
+                      const fileName = e.dataTransfer.getData('text/plain');
+                      if (fileName && onFileDrop) onFileDrop(fileName, folder);
+                    }
                   }}
                   className={`group border-b border-blue-50 cursor-pointer transition-colors ${
                     dragOverFolder === folder
@@ -206,25 +214,32 @@ export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDow
             <div
               key={`folder-${folder}`}
               onClick={() => onFolderClick?.(folder)}
+              draggable
+              onDragStart={(e) => { e.dataTransfer.setData('application/x-folder', folder); e.dataTransfer.effectAllowed = 'move'; }}
               onDragOver={(e) => { e.preventDefault(); setDragOverFolder(folder); }}
               onDragLeave={() => setDragOverFolder(null)}
               onDrop={(e) => {
                 e.preventDefault();
                 setDragOverFolder(null);
-                const fileName = e.dataTransfer.getData('text/plain');
-                if (fileName && onFileDrop) onFileDrop(fileName, folder);
+                const droppedFolder = e.dataTransfer.getData('application/x-folder');
+                if (droppedFolder && droppedFolder !== folder && onFolderDrop) {
+                  onFolderDrop(droppedFolder, folder);
+                } else {
+                  const fileName = e.dataTransfer.getData('text/plain');
+                  if (fileName && onFileDrop) onFileDrop(fileName, folder);
+                }
               }}
-              className={`group relative border rounded-xl p-4 cursor-pointer transition-all ${
+              className={`group relative border rounded-xl p-4 cursor-pointer transition-all flex flex-col h-full ${
                 dragOverFolder === folder
                   ? 'border-blue-400 bg-blue-100/60 ring-2 ring-blue-300 shadow-md'
                   : 'border-blue-100 bg-gradient-to-br from-blue-50/60 to-white hover:border-blue-300 hover:shadow-sm'
               }`}
             >
-              <div className="flex flex-col items-center gap-2 py-2">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <AiOutlineFolder className="w-5 h-5 text-blue-500" />
+              <div className="flex flex-col items-center justify-center gap-2 flex-1 py-5 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <AiOutlineFolder className="w-6 h-6 text-blue-500" />
                 </div>
-                <span className="text-sm text-gray-800 font-medium truncate max-w-full">{name}</span>
+                <span className="text-sm text-gray-800 font-medium truncate max-w-full px-1">{name}</span>
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
