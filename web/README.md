@@ -1,75 +1,76 @@
-# React + TypeScript + Vite
+# Close the Gate — Web Interface
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The web UI for Close the Gate, providing a visual file manager for encrypted S3 storage.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Frontend**: React + TypeScript + Tailwind CSS (Vite)
+- **Backend**: Express + TypeScript (tsx)
+- **State**: DynamoDB (metadata) + config.json (settings, folders)
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+From the project root:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run web
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This starts both the Express API server (port 3001) and the Vite dev server with HMR.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Architecture
 
 ```
+web/
+├── server/          # Express API
+│   ├── index.ts     # Main server (settings, keys, folders, DynamoDB)
+│   ├── upload.ts    # Upload with SSE progress
+│   ├── download.ts  # Download, preview, delete, rotate
+│   └── keyStore.ts  # RAM key store for high-security mode
+├── src/
+│   ├── components/  # React components
+│   ├── hooks/       # Custom hooks (useFiles, useKeys, useSettings)
+│   ├── services/    # API client functions
+│   ├── data/        # Interfaces
+│   └── utils/       # Formatters, file icons
+└── tests/           # Vitest tests
+```
+
+## Tests
+
+```bash
+npm test
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/settings | Get app settings |
+| PUT | /api/settings | Update settings |
+| GET | /api/keys | List keys |
+| POST | /api/keys | Generate key |
+| DELETE | /api/keys/:name | Delete key |
+| POST | /api/keys/backup | Create key backup |
+| POST | /api/keys/restore | Restore from backup |
+| GET | /api/files | List files (DynamoDB) |
+| POST | /api/upload | Upload + encrypt |
+| GET | /api/upload/progress/:id | SSE upload progress |
+| POST | /api/download | Download + decrypt |
+| POST | /api/preview | In-memory preview |
+| DELETE | /api/files/:name | Delete file |
+| PATCH | /api/files/:name/star | Toggle star |
+| PATCH | /api/files/:name/protect | Toggle deletion protection |
+| PATCH | /api/files/:name/move | Move to folder |
+| POST | /api/files/rotate | Rotate single file key |
+| POST | /api/files/rotate-batch | Batch rotation |
+| GET | /api/files/rotation-check | Check eligible files |
+| GET | /api/folders | List folders |
+| POST | /api/folders | Create folder |
+| DELETE | /api/folders | Delete folder |
+| POST | /api/folders/move | Move folder |
+| GET | /api/lock-status | High-security status |
+| POST | /api/unlock | Unlock keys (password) |
+| POST | /api/lock | Lock keys (wipe RAM) |
+| POST | /api/high-security/enable | Enable high-security |
+| POST | /api/high-security/disable | Disable high-security |
