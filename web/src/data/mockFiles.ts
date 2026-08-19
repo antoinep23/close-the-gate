@@ -4,5 +4,6 @@ export interface FileItem {
   uploadDate: string;
   isStarred: boolean;
   isProtected: boolean;
+  folder: string;
   keyName: string;
 }

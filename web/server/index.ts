@@ -436,6 +436,7 @@ app.get('/api/files', async (_req, res) => {
         uploadDate: record.uploadDate,
         isStarred: Boolean(record.isStarred),
         isProtected: Boolean(record.isProtected),
+        folder: record.folder || '/',
         keyName: record.keyName
       };
     });
@@ -444,6 +445,107 @@ app.get('/api/files', async (_req, res) => {
   } catch (err) {
     console.error('DynamoDB scan error:', err);
     res.status(500).json({ error: 'Failed to fetch files from DynamoDB' });
+  }
+});
+
+// --- Folders endpoints ---
+
+app.get('/api/folders', (_req, res) => {
+  try {
+    const data = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const folders: string[] = data.folders || ['/'];
+    res.json(folders);
+  } catch {
+    res.json(['/']);
+  }
+});
+
+app.post('/api/folders', (req, res) => {
+  const { folder } = req.body;
+
+  if (!folder || typeof folder !== 'string') {
+    res.status(400).json({ error: 'folder (string) is required' });
+    return;
+  }
+
+  // Normalize: must start with /, no trailing slash (except root)
+  let normalized = folder.startsWith('/') ? folder : '/' + folder;
+  if (normalized !== '/' && normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
+  }
+
+  try {
+    const data = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const folders: string[] = data.folders || ['/'];
+
+    if (folders.includes(normalized)) {
+      res.status(409).json({ error: 'Folder already exists' });
+      return;
+    }
+
+    folders.push(normalized);
+    data.folders = folders;
+    fs.writeFileSync(configPath, JSON.stringify(data, null, 2) + '\n');
+
+    res.json({ success: true, folder: normalized });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.delete('/api/folders', (req, res) => {
+  const { folder } = req.body;
+
+  if (!folder || folder === '/') {
+    res.status(400).json({ error: 'Cannot delete root folder' });
+    return;
+  }
+
+  try {
+    const data = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const folders: string[] = data.folders || ['/'];
+
+    const index = folders.indexOf(folder);
+    if (index === -1) {
+      res.status(404).json({ error: 'Folder not found' });
+      return;
+    }
+
+    // Remove folder and any sub-folders
+    data.folders = folders.filter((f: string) => f !== folder && !f.startsWith(folder + '/'));
+    fs.writeFileSync(configPath, JSON.stringify(data, null, 2) + '\n');
+
+    res.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
+  }
+});
+
+// --- Move file to folder endpoint ---
+
+app.patch('/api/files/:fileName/move', async (req, res) => {
+  const { fileName } = req.params;
+  const { folder } = req.body;
+
+  if (!fileName || !folder) {
+    res.status(400).json({ error: 'fileName and folder are required' });
+    return;
+  }
+
+  try {
+    const command = new UpdateItemCommand({
+      TableName: tableName,
+      Key: { fileName: { S: fileName } },
+      UpdateExpression: 'SET folder = :folder',
+      ExpressionAttributeValues: { ':folder': { S: folder } },
+    });
+    await dynamoClient.send(command);
+    res.json({ success: true, fileName, folder });
+  } catch (err) {
+    console.error('Move file error:', err);
+    res.status(500).json({ error: 'Failed to move file' });
   }
 });
 

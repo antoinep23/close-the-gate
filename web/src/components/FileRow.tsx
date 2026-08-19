@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { downloadFile, toggleStar, deleteFile, deleteLocalFile, toggleProtection } from '../services/api';
@@ -17,11 +17,12 @@ interface FileRowProps {
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
   onPreviewClick?: (fileName: string, keyName: string) => void;
+  onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onProtectionChange, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -123,7 +124,12 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
 
   return (
     <>
-      <tr onClick={handleClick} className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+      <tr
+        onClick={handleClick}
+        draggable
+        onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
+        className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+      >
         <td className="py-2.5">
           <div className="flex items-center gap-3">
             <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />
@@ -136,7 +142,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           <td className="py-2.5">
             <button
               onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
               aria-label={`Preview ${file.fileName}`}
               title="Preview"
             >
@@ -165,11 +171,23 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           <td className="py-2.5">
             <button
               onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-blue-100 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
               aria-label={`Rotate key for ${file.fileName}`}
               title="Rotate key"
             >
               <AiOutlineSync className="w-4 h-4 text-gray-500" />
+            </button>
+          </td>
+        )}
+        {onMoveClick && (
+          <td className="py-2.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveClick(file.fileName, file.folder || '/'); }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              aria-label={`Move ${file.fileName}`}
+              title="Move to folder"
+            >
+              <AiOutlineFolderOpen className="w-4 h-4 text-gray-500" />
             </button>
           </td>
         )}
@@ -193,7 +211,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
               onClick={handleLock}
               className={`p-1 rounded-full cursor-pointer transition-all ${
                 protected_
-                  ? 'text-amber-500 hover:bg-amber-100'
+                  ? 'text-amber-500 hover:bg-gray-200'
                   : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-200'
               }`}
               aria-label={protected_ ? 'Unlock deletion' : 'Lock deletion'}
@@ -208,7 +226,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-50 cursor-pointer transition-all"
               aria-label={`Delete ${file.fileName}`}
               title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
             >

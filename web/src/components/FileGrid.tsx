@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { AiOutlineFolder, AiOutlineDelete } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { FileCard } from './FileCard';
 import { FileRow } from './FileRow';
@@ -8,6 +9,7 @@ type SortDirection = 'asc' | 'desc';
 
 interface FileGridProps {
   files: FileItem[];
+  subFolders?: string[];
   viewMode: 'grid' | 'list';
   onDownloadSuccess?: (fileName: string) => void;
   onDownloadError?: (fileName: string, error: string) => void;
@@ -19,7 +21,11 @@ interface FileGridProps {
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
   onPreviewClick?: (fileName: string, keyName: string) => void;
+  onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
+  onFolderClick?: (folder: string) => void;
+  onDeleteFolder?: (folder: string) => void;
+  onFileDrop?: (fileName: string, targetFolder: string) => void;
   hideDownload?: boolean;
 }
 
@@ -45,9 +51,10 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onProtectionChange, hideDownload }: FileGridProps) {
+export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onFileDrop, hideDownload }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -73,7 +80,9 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
     });
   }, [files, sortField, sortDirection]);
 
-  if (files.length === 0) {
+  const hasSubFolders = subFolders && subFolders.length > 0;
+
+  if (files.length === 0 && !hasSubFolders) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
         <p>No files found</p>
@@ -109,11 +118,60 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
               {onPreviewClick && <th className="pb-2 font-medium w-10"></th>}
               {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
               {onRotateClick && <th className="pb-2 font-medium w-10"></th>}
+              {onMoveClick && <th className="pb-2 font-medium w-10"></th>}
               <th className="pb-2 font-medium w-10"></th>
               <th className="pb-2 font-medium w-10"></th>
             </tr>
           </thead>
           <tbody>
+            {hasSubFolders && subFolders.map((folder) => {
+              const name = folder.split('/').pop() || folder;
+              return (
+                <tr
+                  key={`folder-${folder}`}
+                  onClick={() => onFolderClick?.(folder)}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverFolder(folder); }}
+                  onDragLeave={() => setDragOverFolder(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverFolder(null);
+                    const fileName = e.dataTransfer.getData('text/plain');
+                    if (fileName && onFileDrop) onFileDrop(fileName, folder);
+                  }}
+                  className={`group border-b border-blue-50 cursor-pointer transition-colors ${
+                    dragOverFolder === folder
+                      ? 'bg-blue-100/60 ring-2 ring-blue-300 ring-inset'
+                      : 'bg-blue-50/20 hover:bg-blue-50/60'
+                  }`}
+                >
+                  <td className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center ml-1">
+                        <AiOutlineFolder className="w-4.5 h-4.5 text-blue-500" />
+                      </div>
+                      <span className="text-sm text-gray-800 font-medium">{name}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 text-sm text-gray-300">—</td>
+                  <td className="py-3 text-sm text-gray-300">—</td>
+                  {onPreviewClick && <td className="py-3"></td>}
+                  {!hideDownload && <td className="py-3"></td>}
+                  {onRotateClick && <td className="py-3"></td>}
+                  {onMoveClick && <td className="py-3"></td>}
+                  <td className="py-3"></td>
+                  <td className="py-3"></td>
+                  <td className="py-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+                      title="Delete folder"
+                    >
+                      <AiOutlineDelete className="w-4 h-4 text-red-500" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
             {sortedFiles.map((file) => (
               <FileRow
                 key={file.fileName}
@@ -128,6 +186,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
                 onDeleteLocalError={onDeleteLocalError}
                 onRotateClick={onRotateClick}
                 onPreviewClick={onPreviewClick}
+                onMoveClick={onMoveClick}
                 onProtectionChange={onProtectionChange}
                 hideDownload={hideDownload}
               />
@@ -140,7 +199,43 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 auto-rows-fr">
+        {hasSubFolders && subFolders.map((folder) => {
+          const name = folder.split('/').pop() || folder;
+          return (
+            <div
+              key={`folder-${folder}`}
+              onClick={() => onFolderClick?.(folder)}
+              onDragOver={(e) => { e.preventDefault(); setDragOverFolder(folder); }}
+              onDragLeave={() => setDragOverFolder(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverFolder(null);
+                const fileName = e.dataTransfer.getData('text/plain');
+                if (fileName && onFileDrop) onFileDrop(fileName, folder);
+              }}
+              className={`group relative border rounded-xl p-4 cursor-pointer transition-all ${
+                dragOverFolder === folder
+                  ? 'border-blue-400 bg-blue-100/60 ring-2 ring-blue-300 shadow-md'
+                  : 'border-blue-100 bg-gradient-to-br from-blue-50/60 to-white hover:border-blue-300 hover:shadow-sm'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2 py-2">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <AiOutlineFolder className="w-5 h-5 text-blue-500" />
+                </div>
+                <span className="text-sm text-gray-800 font-medium truncate max-w-full">{name}</span>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+                title="Delete folder"
+              >
+                <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
+              </button>
+            </div>
+          );
+        })}
         {sortedFiles.map((file) => (
           <FileCard
             key={file.fileName}
@@ -155,6 +250,7 @@ export function FileGrid({ files, viewMode, onDownloadSuccess, onDownloadError, 
             onDeleteLocalError={onDeleteLocalError}
             onRotateClick={onRotateClick}
             onPreviewClick={onPreviewClick}
+            onMoveClick={onMoveClick}
             onProtectionChange={onProtectionChange}
             hideDownload={hideDownload}
           />

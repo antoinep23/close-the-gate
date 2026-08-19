@@ -3,5 +3,6 @@ export interface FileMetadata {
     size: number;
     uploadDate: string;
     isStarred: boolean;
+    folder: string;
     keyName: string;
 }

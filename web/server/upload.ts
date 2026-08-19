@@ -72,6 +72,7 @@ router.post('/upload', (req, res) => {
     }
 
     const keyName = req.body.keyName;
+    const folder = req.body.folder || '/';
     const uploadedFile = req.file;
 
     if (!uploadedFile || !keyName) {
@@ -99,7 +100,7 @@ router.post('/upload', (req, res) => {
         const file = new File();
         await file.upload(uploadedFile.originalname, key, filesPath, false, (phase: string, percent: number) => {
           progressStore.set(uploadId, { phase, percent, done: false });
-        });
+        }, folder);
 
         progressStore.set(uploadId, { phase: 'complete', percent: 100, done: true });
       } catch (err: unknown) {
