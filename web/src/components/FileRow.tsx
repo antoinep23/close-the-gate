@@ -54,8 +54,8 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             <span className="text-sm text-gray-800">{file.fileName}</span>
           </div>
         </td>
-        <td className="py-2.5 text-sm text-gray-500">{formatDate(file.uploadDate)}</td>
-        <td className="py-2.5 text-sm text-gray-500">{formatSize(file.size)}</td>
+        <td className="py-2.5 text-sm text-gray-500 hidden md:table-cell">{formatDate(file.uploadDate)}</td>
+        <td className="py-2.5 text-sm text-gray-500 hidden md:table-cell">{formatSize(file.size)}</td>
         {onPreviewClick && (
           <td className="py-2.5">
             <button

@@ -112,7 +112,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
             <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
               <th className="pb-2 font-medium">Name</th>
               <th
-                className="pb-2 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors"
+                className="pb-2 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('uploadDate')}
               >
                 <span className="inline-flex items-center">
@@ -121,7 +121,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                 </span>
               </th>
               <th
-                className="pb-2 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors"
+                className="pb-2 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('size')}
               >
                 <span className="inline-flex items-center">
@@ -173,8 +173,8 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                       <span className="text-sm text-gray-800 font-medium">{name}</span>
                     </div>
                   </td>
-                  <td className="py-3 text-sm text-gray-300">—</td>
-                  <td className="py-3 text-sm text-gray-400">{folderSizes?.[folder] ? formatSize(folderSizes[folder]) : '—'}</td>
+                  <td className="py-3 text-sm text-gray-300 hidden md:table-cell">—</td>
+                  <td className="py-3 text-sm text-gray-400 hidden md:table-cell">{folderSizes?.[folder] ? formatSize(folderSizes[folder]) : '—'}</td>
                   {onPreviewClick && <td className="py-3"></td>}
                   {!hideDownload && <td className="py-3"></td>}
                   {onRotateClick && <td className="py-3"></td>}

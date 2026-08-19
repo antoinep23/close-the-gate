@@ -31,7 +31,7 @@ export function FolderBreadcrumb({ currentFolder, onNavigate, onCreateFolder }: 
   }
 
   return (
-    <div className="flex items-center gap-1.5 text-sm min-h-[28px]">
+    <div className="flex items-center gap-1.5 text-sm min-h-[28px] overflow-x-auto">
       {currentFolder !== '/' && (
         <button
           onClick={() => onNavigate(parentFolder)}

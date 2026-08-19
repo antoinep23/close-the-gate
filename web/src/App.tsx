@@ -30,6 +30,7 @@ import type { FileItem } from './data/mockFiles';
 
 function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('my-drive');
   const [currentFolder, setCurrentFolder] = useState('/');
   const [searchQuery, setSearchQuery] = useState('');
@@ -264,6 +265,7 @@ function App() {
         onSearchChange={setSearchQuery}
         onSettingsOpen={() => setSettingsOpen(true)}
         onEmergencyRotation={() => setEmergencyRotationOpen(true)}
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         highSecurity={lockStatus.highSecurity}
         unlocked={lockStatus.unlocked}
         onLock={handleLock}
@@ -275,10 +277,12 @@ function App() {
           files={files}
           keys={keys}
           region={settings.region}
-          onUploadClick={() => setUploadOpen(true)}
-          onGenerateKey={() => setKeyGenOpen(true)}
-          onDeleteKey={(k) => setKeyToDelete(k)}
-          onBackupClick={() => setBackupOpen(true)}
+          onUploadClick={() => { setUploadOpen(true); setSidebarOpen(false); }}
+          onGenerateKey={() => { setKeyGenOpen(true); setSidebarOpen(false); }}
+          onDeleteKey={(k) => { setKeyToDelete(k); setSidebarOpen(false); }}
+          onBackupClick={() => { setBackupOpen(true); setSidebarOpen(false); }}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
