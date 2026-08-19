@@ -21,6 +21,7 @@ import { BackupKeysModal } from './components/BackupKeysModal';
 import { RotateKeyModal } from './components/RotateKeyModal';
 import { PreviewModal } from './components/PreviewModal';
 import { MoveFileModal } from './components/MoveFileModal';
+import { EmergencyRotationModal } from './components/EmergencyRotationModal';
 
 function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
@@ -70,6 +71,7 @@ function App() {
   const [rotateFile, setRotateFile] = useState<{ fileName: string; keyName: string } | null>(null);
   const [previewFile, setPreviewFile] = useState<{ fileName: string; keyName: string } | null>(null);
   const [moveFile, setMoveFile] = useState<{ fileName: string; folder: string } | null>(null);
+  const [emergencyRotationOpen, setEmergencyRotationOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
   const { files, loading, error, updateFileStar, refetch } = useFiles();
@@ -272,6 +274,37 @@ function App() {
     }
   }, [addToast, refetchFolders, refetch]);
 
+  const handleEmergencyRotation = useCallback(async (targetKey: string) => {
+    setEmergencyRotationOpen(false);
+    addToast('success', 'Emergency rotation started...');
+
+    try {
+      const res = await fetch('/api/files/rotate-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: files.map((f) => ({ fileName: f.fileName, keyName: f.keyName, folder: f.folder || '/' })),
+          targetKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const failed = data.results?.filter((r: { success: boolean }) => !r.success).length || 0;
+        if (failed > 0) {
+          addToast('error', `Rotation done: ${data.rotated}/${data.total} succeeded, ${failed} failed`);
+        } else {
+          addToast('success', `All ${data.rotated} file(s) rotated successfully`);
+        }
+        refetch();
+        refetchKeys();
+      } else {
+        addToast('error', data.error || 'Emergency rotation failed');
+      }
+    } catch {
+      addToast('error', 'Network error during emergency rotation');
+    }
+  }, [files, addToast, refetch, refetchKeys]);
+
   let displayFiles: FileItem[];
 
   if (activeSection === 'downloaded') {
@@ -307,6 +340,7 @@ function App() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSettingsOpen={() => setSettingsOpen(true)}
+        onEmergencyRotation={() => setEmergencyRotationOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeSection={activeSection} onSectionChange={(s) => { setActiveSection(s); setCurrentFolder('/'); }} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} onGenerateKey={() => setKeyGenOpen(true)} onDeleteKey={(k) => setKeyToDelete(k)} onBackupClick={() => setBackupOpen(true)} />
@@ -440,6 +474,13 @@ function App() {
         onClose={() => setMoveFile(null)}
         onSuccess={(fileName, folder) => { addToast('success', `Moved "${fileName}" to ${folder}`); refetch(); }}
         onError={(fileName, err) => addToast('error', `Failed to move "${fileName}": ${err}`)}
+      />
+      <EmergencyRotationModal
+        isOpen={emergencyRotationOpen}
+        keys={keys}
+        fileCount={files.length}
+        onClose={() => setEmergencyRotationOpen(false)}
+        onConfirm={handleEmergencyRotation}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>

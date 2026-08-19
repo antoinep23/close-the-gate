@@ -5,6 +5,7 @@ interface EligibleFile {
   fileName: string;
   keyName: string;
   uploadDate: string;
+  folder: string;
 }
 
 interface RotationCheckResponse {
@@ -59,7 +60,7 @@ export function RotationBanner({ onRotateComplete, onError }: RotationBannerProp
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          files: eligible.map((f) => ({ fileName: f.fileName, keyName: f.keyName })),
+          files: eligible.map((f) => ({ fileName: f.fileName, keyName: f.keyName, folder: f.folder })),
           targetKey,
         }),
       });
