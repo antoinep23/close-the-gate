@@ -31,7 +31,7 @@ The software is developped using TypeScript over Node.js.
 
 ## Prerequisites
 
-- Node.js (v26.0.0+).
+- Node.js (v22.0.0+).
 - AWS Credentials configured locally (or via .env).
 
 ## Configuration
