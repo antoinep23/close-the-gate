@@ -46,6 +46,23 @@ DYNAMO_TABLE=your-table-name
 
 ## Installation
 
+### Docker (recommended)
+
+```bash
+docker build -t close-the-gate .
+docker run -d -p 3001:3001 --env-file .env -v ./keys:/app/keys -v ./config.json:/app/config.json close-the-gate
+```
+
+Then open `http://localhost:3001`.
+
+Or with docker-compose:
+
+```bash
+docker compose up -d
+```
+
+### Manual
+
 1. Install the dependencies:
 
 ```bash

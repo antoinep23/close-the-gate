@@ -869,6 +869,16 @@ app.post('/api/folders/move', async (req, res) => {
   }
 });
 
+// --- Serve frontend static files (production) ---
+const distPath = path.resolve(__dirname, '../dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  // SPA fallback: serve index.html for non-API routes
+  app.get('/{*splat}', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.listen(port, () => {
   console.log(`API server running on http://localhost:${port}`);
 });

@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { PathSettings } from '../components/SettingsModal';
 
 interface LockState {
   highSecurity: boolean;
   unlocked: boolean;
 }
 
-export function useLockStatus(refetchKeys: () => void, addToast: (type: 'success' | 'error', message: string) => void, saveSettings: (s: unknown) => void) {
+export function useLockStatus(refetchKeys: () => void, addToast: (type: 'success' | 'error', message: string) => void, saveSettings: (s: PathSettings) => void) {
   const [lockStatus, setLockStatus] = useState<LockState>({ highSecurity: false, unlocked: false });
 
   const fetchLockStatus = useCallback(async () => {
