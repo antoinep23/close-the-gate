@@ -20,9 +20,14 @@ The software is developped using TypeScript over Node.js.
 - Secure payload structure for S3 upload (IV + Ciphertext)
 - Multipart S3 upload with real-time progress tracking
 - DynamoDB integration for metadata tracking
-- Key rotation (manual per-file or automatic batch)
+- Virtual folder structure (DynamoDB-based, S3 remains flat)
+- In-memory file preview (no disk write, privacy-first)
+- Key rotation (manual per-file, batch, or automatic)
+- Emergency key rotation for all files in one click
 - Auto key rotation with configurable interval and auto-generated keys
 - Password-protected key backup and restore (PBKDF2 + AES-256-GCM)
+- Per-file deletion protection with confirmation safeguards
+- Drag and drop file/folder organization
 
 ## Prerequisites
 
@@ -73,12 +78,23 @@ Then open your browser at the indicated URL. From the interface you can manage y
 
 The web interface also provides:
 - Real-time upload progress bar (transfer + server-side encryption + S3 upload)
-- Key rotation (per-file or automatic batch rotation)
+- Virtual folder organization with breadcrumb navigation and drag & drop
+- In-memory file preview (decrypted on the fly, never written to disk)
+- Key rotation (per-file, batch, or emergency rotation for all files)
 - Auto key rotation with configurable interval (Settings > Auto Key Rotation)
 - Password-protected key backup and restore
-- Sortable file list by date and size
+- Per-file deletion protection (lock/unlock with confirmation)
+- Sortable file list by date and size (list and grid view)
 
 ![Close the Gate Web UI](resources/screen_ui.png)
+
+| Upload with progress | Settings & auto rotation |
+|:---:|:---:|
+| ![Upload](resources/upload_file.png) | ![Settings](resources/settings.png) |
+
+| Key backup | Emergency rotation |
+|:---:|:---:|
+| ![Backup](resources/key_backup.png) | ![Rotation](resources/global_rotation.png) |
 
 ### 2. Command Line Interface (CLI)
 
