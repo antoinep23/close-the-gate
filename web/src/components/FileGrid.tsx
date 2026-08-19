@@ -82,7 +82,17 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
     });
   }, [files, sortField, sortDirection]);
 
-  const hasSubFolders = subFolders && subFolders.length > 0;
+  const sortedSubFolders = useMemo(() => {
+    if (!subFolders) return undefined;
+    if (sortField !== 'size' || !folderSizes) return subFolders;
+
+    return [...subFolders].sort((a, b) => {
+      const cmp = (folderSizes[a] || 0) - (folderSizes[b] || 0);
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+  }, [subFolders, sortField, sortDirection, folderSizes]);
+
+  const hasSubFolders = sortedSubFolders && sortedSubFolders.length > 0;
 
   if (files.length === 0 && !hasSubFolders) {
     return (
@@ -126,7 +136,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
             </tr>
           </thead>
           <tbody>
-            {hasSubFolders && subFolders.map((folder) => {
+            {hasSubFolders && sortedSubFolders.map((folder) => {
               const name = folder.split('/').pop() || folder;
               return (
                 <tr
