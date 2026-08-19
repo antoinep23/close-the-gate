@@ -16,6 +16,7 @@ export default class File {
     private fileName: string | null;
     private hashName: string | null;
     private isStarred: boolean;
+    private folder: string;
     private buffer: Buffer | null;
     private key: Key | null;
     private s3Client: S3Client;
@@ -29,6 +30,7 @@ export default class File {
         this.fileName = null;
         this.hashName = null;
         this.isStarred = false;
+        this.folder = '/';
         this.buffer = null;
         this.key = null;
         this.s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -37,10 +39,11 @@ export default class File {
         this.dynamoTableName = process.env.DYNAMO_TABLE!;
     }
 
-    public async upload(fileName: string, key: Key, customPath?: string, isStarred?: boolean, onProgress?: ProgressCallback): Promise<string> {
+    public async upload(fileName: string, key: Key, customPath?: string, isStarred?: boolean, onProgress?: ProgressCallback, folder?: string): Promise<string> {
         this.key = key;
         this.fileName = fileName;
         this.isStarred = isStarred || false;
+        this.folder = folder || '/';
 
         if (customPath) this.customPath = customPath;
         this.configureDirPath("files");
@@ -177,6 +180,7 @@ export default class File {
             size: this.buffer!.length,
             uploadDate: new Date().toISOString(),
             isStarred: this.isStarred,
+            folder: this.folder,
             keyName: this.key?.id + ".pem" || "unknown",
         };
 

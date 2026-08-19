@@ -59,12 +59,14 @@ export interface UploadProgressInfo {
 export function uploadFile(
   file: globalThis.File,
   keyName: string,
-  onProgress?: (percent: number, info: UploadProgressInfo) => void
+  onProgress?: (percent: number, info: UploadProgressInfo) => void,
+  folder?: string
 ): Promise<{ success: boolean; error?: string }> {
   return new Promise((resolve) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('keyName', keyName);
+    if (folder) formData.append('folder', folder);
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload');
@@ -328,4 +330,78 @@ export async function previewFile(fileName: string, keyName: string): Promise<{ 
   } catch {
     return { success: false, error: 'Network error' };
   }
+}
+
+export async function getFolders(): Promise<string[]> {
+  try {
+    const res = await fetch('/api/folders');
+    if (!res.ok) return ['/'];
+    return await res.json();
+  } catch {
+    return ['/'];
+  }
+}
+
+export async function createFolder(folder: string): Promise<{ success: boolean; folder?: string; error?: string }> {
+  const res = await fetch('/api/folders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to create folder' };
+  }
+
+  return { success: true, folder: data.folder };
+}
+
+export async function deleteFolder(folder: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch('/api/folders', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to delete folder' };
+  }
+
+  return { success: true };
+}
+
+export async function moveFile(fileName: string, folder: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`/api/files/${encodeURIComponent(fileName)}/move`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to move file' };
+  }
+
+  return { success: true };
+}
+
+export async function moveFolderInto(sourceFolder: string, targetFolder: string): Promise<{ success: boolean; newPath?: string; error?: string }> {
+  const res = await fetch('/api/folders/move', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sourceFolder, targetFolder }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to move folder' };
+  }
+
+  return { success: true, newPath: data.newPath };
 }

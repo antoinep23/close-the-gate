@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { downloadFile, toggleStar, deleteFile, deleteLocalFile, toggleProtection } from '../services/api';
@@ -17,11 +17,12 @@ interface FileCardProps {
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
   onPreviewClick?: (fileName: string, keyName: string) => void;
+  onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onProtectionChange, hideDownload }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -35,9 +36,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
   async function handleDownload(e: React.MouseEvent) {
     e.stopPropagation();
     setDownloading(true);
-
     const result = await downloadFile(file.fileName, file.keyName);
-
     setDownloading(false);
     if (result.success) {
       onDownloadSuccess?.(file.fileName);
@@ -50,7 +49,6 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
     e.stopPropagation();
     const newValue = !starred;
     setStarred(newValue);
-
     const result = await toggleStar(file.fileName, newValue);
     if (result.success) {
       onStarToggle?.(file.fileName, newValue);
@@ -93,23 +91,16 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
   async function confirmDelete() {
     setConfirmOpen(false);
     setDeleting(true);
-
     if (isLocalDelete) {
       const result = await deleteLocalFile(file.fileName);
       setDeleting(false);
-      if (result.success) {
-        onDeleteLocalSuccess?.(file.fileName);
-      } else {
-        onDeleteLocalError?.(file.fileName, result.error || 'Unknown error');
-      }
+      if (result.success) onDeleteLocalSuccess?.(file.fileName);
+      else onDeleteLocalError?.(file.fileName, result.error || 'Unknown error');
     } else {
       const result = await deleteFile(file.fileName, file.keyName);
       setDeleting(false);
-      if (result.success) {
-        onDeleteSuccess?.(file.fileName);
-      } else {
-        onDeleteError?.(file.fileName, result.error || 'Unknown error');
-      }
+      if (result.success) onDeleteSuccess?.(file.fileName);
+      else onDeleteError?.(file.fileName, result.error || 'Unknown error');
     }
   }
 
@@ -122,98 +113,115 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
   return (
     <div
       onClick={handleClick}
-      className="group relative border border-gray-200 rounded-xl p-3 hover:bg-gray-50 hover:border-gray-300 cursor-pointer transition-all"
+      draggable
+      onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
+      className="group relative border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm cursor-pointer transition-all flex flex-col h-full"
     >
-      <div className="flex items-center gap-3">
-        <Icon className={`w-6 h-6 flex-shrink-0 ${color}`} />
-        <span className="text-sm text-gray-800 truncate flex-1">{file.fileName}</span>
-        <div className="flex items-center gap-1">
-          {onPreviewClick && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
-              aria-label={`Preview ${file.fileName}`}
-              title="Preview"
-            >
-              <AiOutlineEye className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
-          {!hideDownload && (
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
-              aria-label={`Download ${file.fileName}`}
-              title="Download"
-            >
-              {downloading ? (
-                <AiOutlineLoading3Quarters className="w-4 h-4 text-blue-500 animate-spin" />
-              ) : (
-                <AiOutlineDownload className="w-4 h-4 text-gray-500" />
-              )}
-            </button>
-          )}
-          {onRotateClick && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-blue-100 cursor-pointer transition-all"
-              aria-label={`Rotate key for ${file.fileName}`}
-              title="Rotate key"
-            >
-              <AiOutlineSync className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
-          {!isLocalDelete && (
-            <button
-              onClick={handleStar}
-              className={`p-1 rounded-full cursor-pointer transition-all ${
-                starred ? 'text-yellow-400' : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:text-yellow-400'
-              }`}
-              aria-label={starred ? 'Unstar' : 'Star'}
-              title={starred ? 'Unstar' : 'Star'}
-            >
-              {starred ? <AiFillStar className="w-4 h-4" /> : <AiOutlineStar className="w-4 h-4" />}
-            </button>
-          )}
-          {!isLocalDelete && (
-            <button
-              onClick={handleLock}
-              className={`p-1 rounded-full cursor-pointer transition-all ${
-                protected_
-                  ? 'text-amber-500 hover:bg-amber-100'
-                  : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-200'
-              }`}
-              aria-label={protected_ ? 'Unlock deletion' : 'Lock deletion'}
-              title={protected_ ? 'Remove deletion protection' : 'Protect from deletion'}
-            >
-              {protected_ ? <AiOutlineLock className="w-4 h-4" /> : <AiOutlineUnlock className="w-4 h-4" />}
-            </button>
-          )}
-          {!protected_ ? (
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
-              aria-label={`Delete ${file.fileName}`}
-              title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
-            >
-              {deleting ? (
-                <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
-              ) : (
-                <AiOutlineDelete className="w-4 h-4 text-red-500" />
-              )}
-            </button>
-          ) : (
-            <span className="p-1 inline-block" title="Deletion protected">
-              <AiOutlineDelete className="opacity-0 group-hover:opacity-100 w-4 h-4 text-gray-200" />
-            </span>
-          )}
+      {/* Persistent badges (star, lock) */}
+      <div className="absolute top-2 right-2 flex items-center gap-0.5">
+        {starred && <AiFillStar className="w-3.5 h-3.5 text-yellow-400" />}
+        {protected_ && <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" />}
+      </div>
+
+      {/* File icon centered */}
+      <div className="flex items-center justify-center py-5">
+        <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+          <Icon className={`w-6 h-6 ${color}`} />
         </div>
       </div>
-      <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+
+      {/* File name */}
+      <p className="text-sm text-gray-800 font-medium text-center truncate w-full px-1" title={file.fileName}>
+        {file.fileName}
+      </p>
+
+      {/* Date + size footer */}
+      <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400 px-1">
         <span>{formatDate(file.uploadDate)}</span>
         <span>{formatSize(file.size)}</span>
       </div>
+
+      {/* Hover action bar */}
+      <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm border-t border-gray-100 rounded-b-xl px-2 py-1.5 flex items-center justify-center gap-1">
+        {onPreviewClick && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
+            className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
+            title="Preview"
+          >
+            <AiOutlineEye className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+        )}
+        {!hideDownload && (
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
+            title="Download"
+          >
+            {downloading ? (
+              <AiOutlineLoading3Quarters className="w-3.5 h-3.5 text-gray-600 animate-spin" />
+            ) : (
+              <AiOutlineDownload className="w-3.5 h-3.5 text-gray-600" />
+            )}
+          </button>
+        )}
+        {onRotateClick && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
+            className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
+            title="Rotate key"
+          >
+            <AiOutlineSync className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+        )}
+        {onMoveClick && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveClick(file.fileName, file.folder || '/'); }}
+            className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
+            title="Move to folder"
+          >
+            <AiOutlineFolderOpen className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+        )}
+        {!isLocalDelete && (
+          <button
+            onClick={handleStar}
+            className="p-1.5 rounded-md cursor-pointer transition-colors group/star"
+            title={starred ? 'Unstar' : 'Star'}
+          >
+            {starred ? <AiFillStar className="w-3.5 h-3.5 text-yellow-400" /> : <AiOutlineStar className="w-3.5 h-3.5 text-gray-600 group-hover/star:text-yellow-400" />}
+          </button>
+        )}
+        {!isLocalDelete && (
+          <button
+            onClick={handleLock}
+            className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
+            title={protected_ ? 'Remove protection' : 'Protect'}
+          >
+            {protected_ ? <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" /> : <AiOutlineUnlock className="w-3.5 h-3.5 text-gray-600" />}
+          </button>
+        )}
+        {!protected_ ? (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="p-1.5 rounded-md hover:bg-red-50 cursor-pointer transition-colors"
+            title={isLocalDelete ? 'Remove from local' : 'Delete'}
+          >
+            {deleting ? (
+              <AiOutlineLoading3Quarters className="w-3.5 h-3.5 text-red-500 animate-spin" />
+            ) : (
+              <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
+            )}
+          </button>
+        ) : (
+          <span className="p-1.5 inline-block">
+            <AiOutlineDelete className="w-3.5 h-3.5 text-gray-200" />
+          </span>
+        )}
+      </div>
+
       <ConfirmModal
         isOpen={confirmOpen}
         title={isLocalDelete ? 'Remove local file' : 'Delete file'}
