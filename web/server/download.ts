@@ -242,6 +242,10 @@ router.post('/files/rotate', async (req, res) => {
     // 3. Delete old S3 object only (DynamoDB already updated by upload)
     await file.deleteS3Object(fileName, currentKey);
 
+    // 4. Clean up local file
+    const localPath = path.join(filesPath, fileName);
+    if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
+
     res.json({ success: true, message: `Key rotated for "${fileName}"` });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -399,6 +403,10 @@ router.post('/files/rotate-batch', async (req, res) => {
 
       // Only delete old S3 object after successful upload (DynamoDB already updated)
       await file.deleteS3Object(fileName, currentKey);
+
+      // Clean up local file
+      const localPath = path.join(filesPath, fileName);
+      if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
 
       results.push({ fileName, success: true });
     } catch (err: unknown) {

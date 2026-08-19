@@ -102,6 +102,12 @@ router.post('/upload', (req, res) => {
           progressStore.set(uploadId, { phase, percent, done: false });
         }, folder);
 
+        // Delete local file after successful upload (no need to keep it on disk)
+        const localFilePath = path.join(filesPath, uploadedFile.originalname);
+        if (fs.existsSync(localFilePath)) {
+          fs.unlinkSync(localFilePath);
+        }
+
         progressStore.set(uploadId, { phase: 'complete', percent: 100, done: true });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
