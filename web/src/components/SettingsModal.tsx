@@ -86,12 +86,12 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
         </p>
 
         {/* High Security Mode */}
-        <div className="border-t border-gray-200 py-5">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h3 className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
-                High Security Mode
-                <AiOutlineLock className="w-4 h-4 text-amber-500" />
+          <div className="border-t border-gray-200 py-5">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
+                  High Security Mode
+                  <AiOutlineLock className="w-4 h-4 text-amber-500" />
               </h3>
               <p className="text-xs text-gray-400 mt-0.5">Keys are encrypted at rest and only loaded in memory after password unlock</p>
             </div>

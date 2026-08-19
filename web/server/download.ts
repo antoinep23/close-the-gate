@@ -6,7 +6,8 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
-import { retrieveKey } from './keyStore';
+import { retrieveKey, isHighSecurity, isUnlocked, keyStore, getSessionPassword } from './keyStore';
+import { randomBytes, createSecretKey } from 'crypto';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -332,17 +333,45 @@ router.post('/files/rotate-batch', async (req, res) => {
     const date = new Date().toISOString().slice(0, 10);
     const prefix = `auto-rotation-${date}`;
 
-    // Find next available increment
-    const existingKeys = fs.existsSync(keysPath) ? fs.readdirSync(keysPath) : [];
+    // Find next available increment (check both disk and RAM store)
+    const diskKeys = fs.existsSync(keysPath) ? fs.readdirSync(keysPath) : [];
+    const ramKeys = isHighSecurity() ? Array.from(keyStore.keys()) : [];
+    const allKeys = [...new Set([...diskKeys, ...ramKeys])];
     let increment = 1;
-    while (existingKeys.includes(`${prefix}_${increment}.pem`)) {
+    while (allKeys.includes(`${prefix}_${increment}.pem`)) {
       increment++;
     }
 
     const keyName = `${prefix}_${increment}`;
-    const autoKey = new Key();
-    autoKey.generate(32, keyName, keysPath);
     actualTargetKey = `${keyName}.pem`;
+
+    if (isHighSecurity() && isUnlocked()) {
+      // Generate key in RAM only
+      const rawKey = randomBytes(32);
+      keyStore.set(actualTargetKey, rawKey);
+
+      // Update backup
+      const sessionPwd = getSessionPassword();
+      if (sessionPwd) {
+        fs.mkdirSync(keysPath, { recursive: true });
+        for (const [name, buffer] of keyStore.entries()) {
+          fs.writeFileSync(path.join(keysPath, name), buffer, { mode: 0o600 });
+        }
+        const backupPath = Key.backup(sessionPwd, keysPath, keysPath);
+        const targetBackupPath = path.join(keysPath, 'high-security.ctg-backup');
+        if (backupPath !== targetBackupPath) {
+          fs.renameSync(backupPath, targetBackupPath);
+        }
+        for (const name of keyStore.keys()) {
+          const p = path.join(keysPath, name);
+          if (fs.existsSync(p)) fs.unlinkSync(p);
+        }
+      }
+    } else {
+      // Normal mode: generate on disk
+      const autoKey = new Key();
+      autoKey.generate(32, keyName, keysPath);
+    }
   }
 
   const results: Array<{ fileName: string; success: boolean; error?: string }> = [];

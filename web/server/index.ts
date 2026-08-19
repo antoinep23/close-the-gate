@@ -177,6 +177,11 @@ app.post('/api/high-security/enable', (req, res) => {
 });
 
 app.post('/api/high-security/disable', (_req, res) => {
+  if (!isUnlocked()) {
+    res.status(403).json({ error: 'Keys must be unlocked before disabling high security mode.' });
+    return;
+  }
+
   try {
     const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const projectRoot = path.resolve(configPath, '..');
@@ -184,12 +189,10 @@ app.post('/api/high-security/disable', (_req, res) => {
       ? settings.keysPath
       : path.resolve(projectRoot, settings.keysPath);
 
-    // Write keys back to disk from RAM (if unlocked)
-    if (isUnlocked()) {
-      fs.mkdirSync(keysDir, { recursive: true });
-      for (const [keyName, buffer] of keyStore.entries()) {
-        fs.writeFileSync(path.join(keysDir, keyName), buffer, { mode: 0o600 });
-      }
+    // Write keys back to disk from RAM
+    fs.mkdirSync(keysDir, { recursive: true });
+    for (const [keyName, buffer] of keyStore.entries()) {
+      fs.writeFileSync(path.join(keysDir, keyName), buffer, { mode: 0o600 });
     }
 
     // Remove the backup file
