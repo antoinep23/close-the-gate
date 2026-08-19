@@ -31,7 +31,7 @@ The software is developped using TypeScript over Node.js.
 
 ## Prerequisites
 
-- Node.js (v20.6.0+ recommended for native .env support).
+- Node.js (v26.0.0+).
 - AWS Credentials configured locally (or via .env).
 
 ## Configuration
@@ -77,6 +77,7 @@ npm run web
 Then open your browser at the indicated URL. From the interface you can manage your keys, upload, download, and delete encrypted files visually.
 
 The web interface also provides:
+
 - Real-time upload progress bar (transfer + server-side encryption + S3 upload)
 - Virtual folder organization with breadcrumb navigation and drag & drop
 - In-memory file preview (decrypted on the fly, never written to disk)
@@ -88,12 +89,12 @@ The web interface also provides:
 
 ![Close the Gate Web UI](resources/screen_ui.png)
 
-| Upload with progress | Settings & auto rotation |
-|:---:|:---:|
+|         Upload with progress         |      Settings & auto rotation       |
+| :----------------------------------: | :---------------------------------: |
 | ![Upload](resources/upload_file.png) | ![Settings](resources/settings.png) |
 
-| Key backup | Emergency rotation |
-|:---:|:---:|
+|             Key backup              |             Emergency rotation             |
+| :---------------------------------: | :----------------------------------------: |
 | ![Backup](resources/key_backup.png) | ![Rotation](resources/global_rotation.png) |
 
 ### 2. Command Line Interface (CLI)

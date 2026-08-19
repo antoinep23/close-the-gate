@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20, 26]
+        node-version: [26]
 
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +27,13 @@ jobs:
 
       - name: Install web dependencies
         run: npm ci
+        working-directory: web
+
+      - name: TypeScript compile (root)
+        run: npx tsc --noEmit
+
+      - name: TypeScript compile (web)
+        run: npx tsc -b
         working-directory: web
 
       - name: Run root tests
