@@ -6,20 +6,27 @@ interface ConfirmModalProps {
   message: string;
   confirmLabel?: string;
   confirmText?: string;
+  confirmCheckbox?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function ConfirmModal({ isOpen, title, message, confirmLabel = 'Delete', confirmText, onConfirm, onCancel }: ConfirmModalProps) {
+export function ConfirmModal({ isOpen, title, message, confirmLabel = 'Delete', confirmText, confirmCheckbox, onConfirm, onCancel }: ConfirmModalProps) {
   const [input, setInput] = useState('');
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) setInput('');
+    if (!isOpen) {
+      setInput('');
+      setChecked(false);
+    }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const isLocked = confirmText ? input !== confirmText : false;
+  const textLocked = confirmText ? input !== confirmText : false;
+  const checkLocked = confirmCheckbox ? !checked : false;
+  const isLocked = textLocked || checkLocked;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -27,6 +34,18 @@ export function ConfirmModal({ isOpen, title, message, confirmLabel = 'Delete', 
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
         <h3 className="text-base font-medium text-gray-800 mb-2">{title}</h3>
         <p className="text-sm text-gray-500 mb-4">{message}</p>
+
+        {confirmCheckbox && (
+          <label className="flex items-start gap-2 mb-4 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setChecked(e.target.checked)}
+              className="mt-1 w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+            />
+            <span className="text-sm text-gray-500">{confirmCheckbox}</span>
+          </label>
+        )}
 
         {confirmText && (
           <div className="mb-6">

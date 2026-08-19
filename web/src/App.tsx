@@ -439,6 +439,7 @@ function App() {
         message={`Delete "${keyToDelete}" permanently? Files encrypted with this key will no longer be decryptable.`}
         confirmLabel="Delete"
         confirmText="delete"
+        confirmCheckbox="I understand that files encrypted with this key will become permanently inaccessible."
         onConfirm={handleDeleteKey}
         onCancel={() => setKeyToDelete(null)}
       />

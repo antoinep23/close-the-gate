@@ -75,7 +75,7 @@ export function EmergencyRotationModal({ isOpen, keys, fileCount, onClose, onCon
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="rotate all"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 transition-all"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-red-200 focus:border-red-400 transition-all"
             />
           </div>
         </div>
