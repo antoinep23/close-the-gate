@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
-import { downloadFile, toggleStar, deleteFile, deleteLocalFile, toggleProtection } from '../services/api';
+import { formatDate, formatSize } from '../utils/format';
+import { useFileActions } from '../hooks/useFileActions';
 import { ConfirmModal } from './ConfirmModal';
 
 interface FileCardProps {
@@ -24,85 +24,15 @@ interface FileCardProps {
 
 export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
-  const [downloading, setDownloading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const [starred, setStarred] = useState(file.isStarred);
-  const [protected_, setProtected] = useState(file.isProtected);
-
-  const isLocalDelete = !!onDeleteLocalSuccess;
-
-  async function handleDownload(e: React.MouseEvent) {
-    e.stopPropagation();
-    setDownloading(true);
-    const result = await downloadFile(file.fileName, file.keyName);
-    setDownloading(false);
-    if (result.success) {
-      onDownloadSuccess?.(file.fileName);
-    } else {
-      onDownloadError?.(file.fileName, result.error || 'Unknown error');
-    }
-  }
-
-  async function handleStar(e: React.MouseEvent) {
-    e.stopPropagation();
-    const newValue = !starred;
-    setStarred(newValue);
-    const result = await toggleStar(file.fileName, newValue);
-    if (result.success) {
-      onStarToggle?.(file.fileName, newValue);
-    } else {
-      setStarred(!newValue);
-    }
-  }
-
-  async function handleLock(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (protected_) {
-      setUnlockOpen(true);
-    } else {
-      setProtected(true);
-      const result = await toggleProtection(file.fileName, true);
-      if (result.success) {
-        onProtectionChange?.(file.fileName, true);
-      } else {
-        setProtected(false);
-      }
-    }
-  }
-
-  async function confirmUnlock() {
-    setUnlockOpen(false);
-    setProtected(false);
-    const result = await toggleProtection(file.fileName, false);
-    if (result.success) {
-      onProtectionChange?.(file.fileName, false);
-    } else {
-      setProtected(true);
-    }
-  }
-
-  async function handleDelete(e: React.MouseEvent) {
-    e.stopPropagation();
-    setConfirmOpen(true);
-  }
-
-  async function confirmDelete() {
-    setConfirmOpen(false);
-    setDeleting(true);
-    if (isLocalDelete) {
-      const result = await deleteLocalFile(file.fileName);
-      setDeleting(false);
-      if (result.success) onDeleteLocalSuccess?.(file.fileName);
-      else onDeleteLocalError?.(file.fileName, result.error || 'Unknown error');
-    } else {
-      const result = await deleteFile(file.fileName, file.keyName);
-      setDeleting(false);
-      if (result.success) onDeleteSuccess?.(file.fileName);
-      else onDeleteError?.(file.fileName, result.error || 'Unknown error');
-    }
-  }
+  const {
+    downloading, deleting, confirmOpen, setConfirmOpen, unlockOpen, setUnlockOpen,
+    starred, isProtected, isLocalDelete,
+    handleDownload, handleStar, handleLock, confirmUnlock, handleDelete, confirmDelete,
+  } = useFileActions(file, {
+    onDownloadSuccess, onDownloadError, onStarToggle,
+    onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError,
+    onProtectionChange,
+  });
 
   function handleClick() {
     if (onFileOpen && !confirmOpen && !deleting) {
@@ -117,13 +47,13 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
       className="group relative border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm cursor-pointer transition-all flex flex-col h-full"
     >
-      {/* Persistent badges (star, lock) */}
+      {/* Persistent badges */}
       <div className="absolute top-2 right-2 flex items-center gap-0.5">
         {starred && <AiFillStar className="w-3.5 h-3.5 text-yellow-400" />}
-        {protected_ && <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" />}
+        {isProtected && <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" />}
       </div>
 
-      {/* File icon centered */}
+      {/* File icon */}
       <div className="flex items-center justify-center py-5">
         <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
           <Icon className={`w-6 h-6 ${color}`} />
@@ -135,7 +65,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         {file.fileName}
       </p>
 
-      {/* Date + size footer */}
+      {/* Date + size */}
       <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400 px-1">
         <span>{formatDate(file.uploadDate)}</span>
         <span>{formatSize(file.size)}</span>
@@ -197,12 +127,12 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
           <button
             onClick={handleLock}
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
-            title={protected_ ? 'Remove protection' : 'Protect'}
+            title={isProtected ? 'Remove protection' : 'Protect'}
           >
-            {protected_ ? <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" /> : <AiOutlineUnlock className="w-3.5 h-3.5 text-gray-600" />}
+            {isProtected ? <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" /> : <AiOutlineUnlock className="w-3.5 h-3.5 text-gray-600" />}
           </button>
         )}
-        {!protected_ ? (
+        {!isProtected ? (
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -244,16 +174,4 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       />
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }

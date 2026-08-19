@@ -2,6 +2,7 @@ import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCirc
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
 import type { FileCategory } from '../utils/fileIcons';
+import { formatSize } from '../utils/format';
 import { getS3PricePerGb } from '../data/s3Pricing';
 
 interface SidebarProps {
@@ -29,13 +30,6 @@ const categoryItems: { id: FileCategory; label: string; icon: typeof AiOutlineFi
   { id: 'code', label: 'Code', icon: AiOutlineCode },
   { id: 'archives', label: 'Archives', icon: AiOutlineFileZip },
 ];
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
 
 function estimateMonthlyCost(totalBytes: number, region: string): string {
   const gb = totalBytes / (1024 * 1024 * 1024);

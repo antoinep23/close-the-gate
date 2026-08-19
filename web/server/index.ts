@@ -326,15 +326,56 @@ app.delete('/api/keys/:keyName', (req, res) => {
       ? settings.keysPath
       : path.resolve(projectRoot, settings.keysPath);
 
-    const filePath = path.join(keysDir, keyName);
+    if (isHighSecurity()) {
+      if (!isUnlocked()) {
+        res.status(403).json({ error: 'Keys are locked. Unlock first.' });
+        return;
+      }
 
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({ error: 'Key not found' });
-      return;
+      if (!keyStore.has(keyName)) {
+        res.status(404).json({ error: 'Key not found' });
+        return;
+      }
+
+      // Secure wipe the specific buffer then remove from store
+      const buffer = keyStore.get(keyName)!;
+      buffer.fill(0);
+      keyStore.delete(keyName);
+
+      // Update backup
+      const sessionPwd = getSessionPassword();
+      if (sessionPwd && keyStore.size > 0) {
+        fs.mkdirSync(keysDir, { recursive: true });
+        for (const [name, buf] of keyStore.entries()) {
+          fs.writeFileSync(path.join(keysDir, name), buf, { mode: 0o600 });
+        }
+        const backupPath = Key.backup(sessionPwd, keysDir, keysDir);
+        const targetPath = path.join(keysDir, 'high-security.ctg-backup');
+        if (backupPath !== targetPath) {
+          fs.renameSync(backupPath, targetPath);
+        }
+        for (const name of keyStore.keys()) {
+          const p = path.join(keysDir, name);
+          if (fs.existsSync(p)) fs.unlinkSync(p);
+        }
+      } else if (sessionPwd && keyStore.size === 0) {
+        // No keys left, remove backup
+        const backupPath = path.join(keysDir, 'high-security.ctg-backup');
+        if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+      }
+
+      res.json({ success: true });
+    } else {
+      const filePath = path.join(keysDir, keyName);
+
+      if (!fs.existsSync(filePath)) {
+        res.status(404).json({ error: 'Key not found' });
+        return;
+      }
+
+      fs.unlinkSync(filePath);
+      res.json({ success: true });
     }
-
-    fs.unlinkSync(filePath);
-    res.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Key deletion error:', message);
