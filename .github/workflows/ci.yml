@@ -17,6 +17,9 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Update npm to latest
+        run: npm install -g npm@latest
+
       - name: Install root dependencies
         run: npm install
 
