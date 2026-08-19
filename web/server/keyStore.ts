@@ -15,6 +15,19 @@ let _sessionPassword: string | null = null;
 let lockTimeout: ReturnType<typeof setTimeout> | null = null;
 const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
+/**
+ * Securely wipe all key buffers from memory (fill with zeros)
+ * before removing references, to prevent heap memory remnants.
+ */
+export function secureWipe() {
+  for (const buffer of keyStore.values()) {
+    buffer.fill(0);
+  }
+  keyStore.clear();
+  _keyStoreUnlocked = false;
+  _sessionPassword = null;
+}
+
 export function isUnlocked(): boolean {
   return _keyStoreUnlocked;
 }
@@ -35,9 +48,8 @@ export function getSessionPassword(): string | null {
 export function resetLockTimeout() {
   if (lockTimeout) clearTimeout(lockTimeout);
   lockTimeout = setTimeout(() => {
-    keyStore.clear();
-    keyStoreUnlocked = false;
-    console.log('High security: keys locked due to inactivity');
+    secureWipe();
+    console.log('High security: keys securely wiped due to inactivity');
   }, TIMEOUT_MS);
 }
 

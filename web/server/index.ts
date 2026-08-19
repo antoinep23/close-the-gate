@@ -11,7 +11,7 @@ import { unmarshall } from '@aws-sdk/util-dynamodb';
 import downloadRouter from './download';
 import uploadRouter from './upload';
 import KeyModule from '../../src/keys';
-import { keyStore, isUnlocked, setUnlocked, resetLockTimeout, clearLockTimeout, isHighSecurity, retrieveKey, setSessionPassword, getSessionPassword } from './keyStore';
+import { keyStore, isUnlocked, setUnlocked, resetLockTimeout, clearLockTimeout, isHighSecurity, retrieveKey, setSessionPassword, getSessionPassword, secureWipe } from './keyStore';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -121,8 +121,7 @@ app.post('/api/unlock', (req, res) => {
 });
 
 app.post('/api/lock', (_req, res) => {
-  keyStore.clear();
-  setUnlocked(false);
+  secureWipe();
   clearLockTimeout();
   res.json({ success: true });
 });
@@ -201,9 +200,8 @@ app.post('/api/high-security/disable', (_req, res) => {
       fs.unlinkSync(backupPath);
     }
 
-    // Clear store
-    keyStore.clear();
-    setUnlocked(false);
+    // Securely wipe keys from memory
+    secureWipe();
     clearLockTimeout();
 
     // Update config
