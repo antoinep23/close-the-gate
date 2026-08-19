@@ -10,61 +10,31 @@ import { UploadModal } from './components/UploadModal';
 import { KeyGenModal } from './components/KeyGenModal';
 import { ConfirmModal } from './components/ConfirmModal';
 import { ToastContainer } from './components/Toast';
-import type { ToastData } from './components/Toast';
-import { useFiles } from './hooks/useFiles';
-import { useSettings } from './hooks/useSettings';
-import { useKeys } from './hooks/useKeys';
-import { getFileCategory } from './utils/fileIcons';
-import type { FileCategory } from './utils/fileIcons';
-import type { FileItem } from './data/mockFiles';
-import { openFile, deleteKey, openDownloadFolder, getFolders, createFolder, deleteFolder as deleteFolderApi } from './services/api';
 import { BackupKeysModal } from './components/BackupKeysModal';
 import { RotateKeyModal } from './components/RotateKeyModal';
 import { PreviewModal } from './components/PreviewModal';
 import { MoveFileModal } from './components/MoveFileModal';
 import { MoveFolderModal } from './components/MoveFolderModal';
 import { EmergencyRotationModal } from './components/EmergencyRotationModal';
-
-function getSectionTitle(section: string): string {
-  if (section === 'my-drive') return 'All Files';
-  if (section === 'starred') return 'Starred';
-  if (section === 'downloaded') return 'Downloaded';
-  if (section.startsWith('category-')) {
-    const cat = section.replace('category-', '');
-    return cat.charAt(0).toUpperCase() + cat.slice(1);
-  }
-  return '';
-}
-
-function getSubFolders(currentFolder: string, allFolders: string[]): string[] {
-  const prefix = currentFolder === '/' ? '/' : currentFolder + '/';
-  return allFolders.filter((f) => {
-    if (f === currentFolder) return false;
-    if (!f.startsWith(prefix)) return false;
-    // Only direct children (no deeper nesting)
-    const remainder = f.slice(prefix.length);
-    return remainder.length > 0 && !remainder.includes('/');
-  });
-}
-
-function computeFolderSizes(allFiles: FileItem[], subFolders: string[]): Record<string, number> {
-  const sizes: Record<string, number> = {};
-  for (const folder of subFolders) {
-    sizes[folder] = allFiles
-      .filter((f) => {
-        const fileFolder = f.folder || '/';
-        return fileFolder === folder || fileFolder.startsWith(folder + '/');
-      })
-      .reduce((sum, f) => sum + f.size, 0);
-  }
-  return sizes;
-}
+import { useFiles } from './hooks/useFiles';
+import { useSettings } from './hooks/useSettings';
+import { useKeys } from './hooks/useKeys';
+import { useToasts } from './hooks/useToasts';
+import { useLockStatus } from './hooks/useLockStatus';
+import { useFolders } from './hooks/useFolders';
+import { openFile, deleteKey, openDownloadFolder } from './services/api';
+import { getFileCategory } from './utils/fileIcons';
+import { getSectionTitle, getSubFolders, computeFolderSizes } from './utils/folders';
+import type { FileCategory } from './utils/fileIcons';
+import type { FileItem } from './data/mockFiles';
 
 function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [activeSection, setActiveSection] = useState('my-drive');
   const [currentFolder, setCurrentFolder] = useState('/');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Modal visibility state
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [keyGenOpen, setKeyGenOpen] = useState(false);
@@ -75,53 +45,19 @@ function App() {
   const [moveFile, setMoveFile] = useState<{ fileName: string; folder: string } | null>(null);
   const [emergencyRotationOpen, setEmergencyRotationOpen] = useState(false);
   const [moveFolderSource, setMoveFolderSource] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  // Downloaded files (local section)
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
-  const [lockStatus, setLockStatus] = useState<{ highSecurity: boolean; unlocked: boolean }>({ highSecurity: false, unlocked: false });
+
+  // Hooks
+  const { toasts, addToast, dismissToast } = useToasts();
   const { files, loading, error, updateFileStar, refetch } = useFiles();
   const { settings, saveSettings } = useSettings();
   const { keys, refetchKeys } = useKeys();
-  const [folders, setFolders] = useState<string[]>(['/']);
+  const { lockStatus, handleLock, handleUnlockSuccess, handleHighSecurityToggle } = useLockStatus(refetchKeys, addToast, saveSettings);
+  const { folders, handleCreateFolder, handleDeleteFolder, handleFileDrop, handleFolderDrop } = useFolders(addToast, refetch);
 
-  const fetchLockStatus = useCallback(async () => {
-    try {
-      const res = await fetch('/api/lock-status');
-      if (res.ok) {
-        const data = await res.json();
-        // Force lock on page load (keys must be re-unlocked after reload)
-        if (data.highSecurity && data.unlocked) {
-          await fetch('/api/lock', { method: 'POST' });
-          setLockStatus({ highSecurity: true, unlocked: false });
-        } else {
-          setLockStatus(data);
-        }
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => {
-    fetchLockStatus().then(() => refetchKeys());
-  }, [fetchLockStatus, refetchKeys]);
-
-  const refetchFolders = useCallback(async () => {
-    const f = await getFolders();
-    setFolders(f);
-  }, []);
-
-  useEffect(() => {
-    refetchFolders();
-  }, [refetchFolders]);
-
-  const addToast = useCallback((type: 'success' | 'error', message: string) => {
-    const id = crypto.randomUUID();
-    setToasts((prev) => [...prev, { id, type, message }]);
-  }, []);
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  // Fetch downloaded files when section is active or after a download
+  // Fetch downloaded files
   const fetchDownloaded = useCallback(async () => {
     try {
       const res = await fetch('/api/downloaded');
@@ -138,17 +74,14 @@ function App() {
           keyName: '',
         }))
       );
-    } catch {
-      // silently fail
-    }
+    } catch { /* silently fail */ }
   }, []);
 
   useEffect(() => {
-    if (activeSection === 'downloaded') {
-      fetchDownloaded();
-    }
+    if (activeSection === 'downloaded') fetchDownloaded();
   }, [activeSection, fetchDownloaded]);
 
+  // File action callbacks
   const onDownloadSuccess = useCallback((fileName: string) => {
     addToast('success', `Downloaded "${fileName}" successfully`);
     fetchDownloaded();
@@ -160,9 +93,7 @@ function App() {
 
   const onFileOpen = useCallback(async (fileName: string) => {
     const result = await openFile(fileName);
-    if (!result.success) {
-      addToast('error', `Failed to open "${fileName}": ${result.error}`);
-    }
+    if (!result.success) addToast('error', `Failed to open "${fileName}": ${result.error}`);
   }, [addToast]);
 
   const onStarToggle = useCallback((fileName: string, isStarred: boolean) => {
@@ -196,47 +127,14 @@ function App() {
     addToast('error', `Failed to remove "${fileName}": ${err}`);
   }, [addToast]);
 
+  // Key callbacks
   const onKeyGenSuccess = useCallback((keyName: string) => {
     addToast('success', `Generated key "${keyName}"`);
     refetchKeys();
   }, [addToast, refetchKeys]);
 
-  const handleSaveSettings = useCallback(async (newSettings: typeof settings) => {
-    await saveSettings(newSettings);
-    refetch();
-    refetchKeys();
-    fetchDownloaded();
-  }, [saveSettings, refetch, refetchKeys, fetchDownloaded]);
-
   const onKeyGenError = useCallback((err: string) => {
     addToast('error', `Key generation failed: ${err}`);
-  }, [addToast]);
-
-  const onBackupSuccess = useCallback((fileName: string) => {
-    addToast('success', `Backup created: ${fileName}`);
-  }, [addToast]);
-
-  const onBackupError = useCallback((err: string) => {
-    addToast('error', `Backup failed: ${err}`);
-  }, [addToast]);
-
-  const onRestoreSuccess = useCallback((keys: string[]) => {
-    addToast('success', `Restored ${keys.length} key(s)`);
-    refetchKeys();
-  }, [addToast, refetchKeys]);
-
-  const onRestoreError = useCallback((err: string) => {
-    addToast('error', `Restore failed: ${err}`);
-  }, [addToast]);
-
-  const onRotateSuccess = useCallback((fileName: string) => {
-    addToast('success', `Key rotated for "${fileName}"`);
-    refetch();
-    refetchKeys();
-  }, [addToast, refetch, refetchKeys]);
-
-  const onRotateError = useCallback((fileName: string, err: string) => {
-    addToast('error', `Key rotation failed for "${fileName}": ${err}`);
   }, [addToast]);
 
   const handleDeleteKey = useCallback(async () => {
@@ -251,112 +149,46 @@ function App() {
     setKeyToDelete(null);
   }, [keyToDelete, addToast, refetchKeys]);
 
-  const handleCreateFolder = useCallback(async (folderName: string) => {
-    const normalized = folderName.startsWith('/') ? folderName : '/' + folderName;
-    const result = await createFolder(normalized);
-    if (result.success) {
-      addToast('success', `Folder "${result.folder}" created`);
-      refetchFolders();
-    } else {
-      addToast('error', result.error || 'Failed to create folder');
-    }
-  }, [addToast, refetchFolders]);
-
-  const handleDeleteFolder = useCallback(async (folder: string) => {
-    const result = await deleteFolderApi(folder);
-    if (result.success) {
-      addToast('success', `Folder "${folder}" deleted`);
-      refetchFolders();
-      if (activeSection === `folder-${folder}`) {
-        setActiveSection('my-drive');
-      }
-    } else {
-      addToast('error', result.error || 'Failed to delete folder');
-    }
-  }, [addToast, refetchFolders, activeSection]);
-
-  const handleFileDrop = useCallback(async (fileName: string, targetFolder: string) => {
-    const { moveFile } = await import('./services/api');
-    const result = await moveFile(fileName, targetFolder);
-    if (result.success) {
-      addToast('success', `Moved "${fileName}" to ${targetFolder}`);
-      refetch();
-    } else {
-      addToast('error', `Failed to move "${fileName}": ${result.error}`);
-    }
-  }, [addToast, refetch]);
-
-  const handleFolderDrop = useCallback(async (sourceFolder: string, targetFolder: string) => {
-    const { moveFolderInto } = await import('./services/api');
-    const result = await moveFolderInto(sourceFolder, targetFolder);
-    if (result.success) {
-      addToast('success', `Moved folder to ${result.newPath}`);
-      refetchFolders();
-      refetch();
-    } else {
-      addToast('error', `Failed to move folder: ${result.error}`);
-    }
-  }, [addToast, refetchFolders, refetch]);
-
-  const handleLock = useCallback(async () => {
-    try {
-      await fetch('/api/lock', { method: 'POST' });
-      setLockStatus({ highSecurity: true, unlocked: false });
-      refetchKeys();
-      addToast('success', 'Keys locked');
-    } catch {
-      addToast('error', 'Failed to lock keys');
-    }
-  }, [addToast, refetchKeys]);
-
-  const handleUnlockSuccess = useCallback(() => {
-    setLockStatus({ highSecurity: true, unlocked: true });
+  // Settings
+  const handleSaveSettings = useCallback(async (newSettings: typeof settings) => {
+    await saveSettings(newSettings);
+    refetch();
     refetchKeys();
-    addToast('success', 'Keys unlocked');
+    fetchDownloaded();
+  }, [saveSettings, refetch, refetchKeys, fetchDownloaded]);
+
+  // Backup/Restore callbacks
+  const onBackupSuccess = useCallback((fileName: string) => {
+    addToast('success', `Backup created: ${fileName}`);
+  }, [addToast]);
+
+  const onBackupError = useCallback((err: string) => {
+    addToast('error', `Backup failed: ${err}`);
+  }, [addToast]);
+
+  const onRestoreSuccess = useCallback((restoredKeys: string[]) => {
+    addToast('success', `Restored ${restoredKeys.length} key(s)`);
+    refetchKeys();
   }, [addToast, refetchKeys]);
 
-  const handleHighSecurityToggle = useCallback(async (enabled: boolean, password?: string) => {
-    try {
-      if (enabled && password) {
-        const res = await fetch('/api/high-security/enable', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setLockStatus({ highSecurity: true, unlocked: true });
-          addToast('success', `High security enabled. ${data.keyCount} key(s) encrypted.`);
-          refetchKeys();
-        } else {
-          addToast('error', data.error || 'Failed to enable high security');
-        }
-      } else {
-        const res = await fetch('/api/high-security/disable', { method: 'POST' });
-        const data = await res.json();
-        if (res.ok) {
-          setLockStatus({ highSecurity: false, unlocked: false });
-          addToast('success', 'High security disabled. Keys restored to disk.');
-          refetchKeys();
-        } else {
-          addToast('error', data.error || 'Failed to disable high security');
-        }
-      }
-      // Refresh settings to reflect the change
-      const settingsRes = await fetch('/api/settings');
-      if (settingsRes.ok) {
-        const newSettings = await settingsRes.json();
-        saveSettings(newSettings);
-      }
-    } catch {
-      addToast('error', 'Network error');
-    }
-  }, [addToast, refetchKeys, saveSettings]);
+  const onRestoreError = useCallback((err: string) => {
+    addToast('error', `Restore failed: ${err}`);
+  }, [addToast]);
+
+  // Rotation callbacks
+  const onRotateSuccess = useCallback((fileName: string) => {
+    addToast('success', `Key rotated for "${fileName}"`);
+    refetch();
+    refetchKeys();
+  }, [addToast, refetch, refetchKeys]);
+
+  const onRotateError = useCallback((fileName: string, err: string) => {
+    addToast('error', `Key rotation failed for "${fileName}": ${err}`);
+  }, [addToast]);
 
   const handleEmergencyRotation = useCallback(async (targetKey: string) => {
     setEmergencyRotationOpen(false);
     addToast('success', 'Emergency rotation started...');
-
     try {
       const res = await fetch('/api/files/rotate-batch', {
         method: 'POST',
@@ -384,6 +216,15 @@ function App() {
     }
   }, [files, addToast, refetch, refetchKeys]);
 
+  // Folder delete with section reset
+  const onDeleteFolder = useCallback(async (folder: string) => {
+    const success = await handleDeleteFolder(folder);
+    if (success && activeSection === `folder-${folder}`) {
+      setActiveSection('my-drive');
+    }
+  }, [handleDeleteFolder, activeSection]);
+
+  // Derive display files
   let displayFiles: FileItem[];
 
   if (activeSection === 'downloaded') {
@@ -411,6 +252,9 @@ function App() {
     displayFiles = filteredFiles;
   }
 
+  const isMyDrive = activeSection === 'my-drive';
+  const isDownloaded = activeSection === 'downloaded';
+
   return (
     <div className="h-screen flex flex-col bg-white">
       <Header
@@ -425,13 +269,23 @@ function App() {
         onLock={handleLock}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeSection={activeSection} onSectionChange={(s) => { setActiveSection(s); setCurrentFolder('/'); }} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} onGenerateKey={() => setKeyGenOpen(true)} onDeleteKey={(k) => setKeyToDelete(k)} onBackupClick={() => setBackupOpen(true)} />
+        <Sidebar
+          activeSection={activeSection}
+          onSectionChange={(s) => { setActiveSection(s); setCurrentFolder('/'); }}
+          files={files}
+          keys={keys}
+          region={settings.region}
+          onUploadClick={() => setUploadOpen(true)}
+          onGenerateKey={() => setKeyGenOpen(true)}
+          onDeleteKey={(k) => setKeyToDelete(k)}
+          onBackupClick={() => setBackupOpen(true)}
+        />
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="px-6 pt-5 pb-2 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-800">
               {getSectionTitle(activeSection)}
             </h2>
-            {activeSection === 'downloaded' && (
+            {isDownloaded && (
               <button
                 onClick={() => openDownloadFolder()}
                 className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -449,7 +303,7 @@ function App() {
               </span>
             )}
           </div>
-          {activeSection === 'my-drive' && (
+          {isMyDrive && (
             <div className="px-6 pb-2">
               <FolderBreadcrumb
                 currentFolder={currentFolder}
@@ -475,31 +329,33 @@ function App() {
           ) : (
             <FileGrid
               files={displayFiles}
-              subFolders={activeSection === 'my-drive' ? getSubFolders(currentFolder, folders).filter((f) => !searchQuery || f.split('/').pop()!.toLowerCase().includes(searchQuery.toLowerCase())) : undefined}
-              folderSizes={activeSection === 'my-drive' ? computeFolderSizes(files, getSubFolders(currentFolder, folders)) : undefined}
+              subFolders={isMyDrive ? getSubFolders(currentFolder, folders).filter((f) => !searchQuery || f.split('/').pop()!.toLowerCase().includes(searchQuery.toLowerCase())) : undefined}
+              folderSizes={isMyDrive ? computeFolderSizes(files, getSubFolders(currentFolder, folders)) : undefined}
               viewMode={viewMode}
               onDownloadSuccess={onDownloadSuccess}
               onDownloadError={onDownloadError}
-              onFileOpen={activeSection === 'downloaded' ? onFileOpen : undefined}
+              onFileOpen={isDownloaded ? onFileOpen : undefined}
               onStarToggle={onStarToggle}
               onDeleteSuccess={onDeleteSuccess}
               onDeleteError={onDeleteError}
-              onDeleteLocalSuccess={activeSection === 'downloaded' ? onDeleteLocalSuccess : undefined}
-              onDeleteLocalError={activeSection === 'downloaded' ? onDeleteLocalError : undefined}
-              onRotateClick={activeSection !== 'downloaded' ? (fileName, keyName) => setRotateFile({ fileName, keyName }) : undefined}
-              onPreviewClick={activeSection !== 'downloaded' ? (fileName, keyName) => setPreviewFile({ fileName, keyName }) : undefined}
-              onMoveClick={activeSection !== 'downloaded' ? (fileName, folder) => setMoveFile({ fileName, folder }) : undefined}
-              onProtectionChange={activeSection !== 'downloaded' ? () => refetch() : undefined}
-              onFolderClick={activeSection === 'my-drive' ? setCurrentFolder : undefined}
-              onDeleteFolder={activeSection === 'my-drive' ? handleDeleteFolder : undefined}
-              onMoveFolderClick={activeSection === 'my-drive' ? (folder) => setMoveFolderSource(folder) : undefined}
-              onFileDrop={activeSection === 'my-drive' ? handleFileDrop : undefined}
-              onFolderDrop={activeSection === 'my-drive' ? handleFolderDrop : undefined}
-              hideDownload={activeSection === 'downloaded'}
+              onDeleteLocalSuccess={isDownloaded ? onDeleteLocalSuccess : undefined}
+              onDeleteLocalError={isDownloaded ? onDeleteLocalError : undefined}
+              onRotateClick={!isDownloaded ? (fileName, keyName) => setRotateFile({ fileName, keyName }) : undefined}
+              onPreviewClick={!isDownloaded ? (fileName, keyName) => setPreviewFile({ fileName, keyName }) : undefined}
+              onMoveClick={!isDownloaded ? (fileName, folder) => setMoveFile({ fileName, folder }) : undefined}
+              onProtectionChange={!isDownloaded ? () => refetch() : undefined}
+              onFolderClick={isMyDrive ? setCurrentFolder : undefined}
+              onDeleteFolder={isMyDrive ? onDeleteFolder : undefined}
+              onMoveFolderClick={isMyDrive ? (folder) => setMoveFolderSource(folder) : undefined}
+              onFileDrop={isMyDrive ? handleFileDrop : undefined}
+              onFolderDrop={isMyDrive ? handleFolderDrop : undefined}
+              hideDownload={isDownloaded}
             />
           )}
         </main>
       </div>
+
+      {/* Modals */}
       <SettingsModal
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -571,7 +427,7 @@ function App() {
         sourceFolder={moveFolderSource || ''}
         folders={folders}
         onClose={() => setMoveFolderSource(null)}
-        onSuccess={(_, newPath) => { addToast('success', `Moved folder to ${newPath}`); refetchFolders(); refetch(); }}
+        onSuccess={(_, newPath) => { addToast('success', `Moved folder to ${newPath}`); refetch(); }}
         onError={(err) => addToast('error', err)}
       />
       <EmergencyRotationModal

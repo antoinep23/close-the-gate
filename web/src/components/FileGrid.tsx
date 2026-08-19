@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { AiOutlineFolder, AiOutlineDelete, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
+import { formatSize } from '../utils/format';
 import { FileCard } from './FileCard';
 import { FileRow } from './FileRow';
 
@@ -307,11 +308,4 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
       </div>
     </div>
   );
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
