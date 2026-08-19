@@ -1,4 +1,5 @@
-import { AiOutlineClose } from 'react-icons/ai';
+import { useState } from 'react';
+import { AiOutlineClose, AiOutlineLock } from 'react-icons/ai';
 
 export interface AutoRotationSettings {
   enabled: boolean;
@@ -11,6 +12,7 @@ export interface PathSettings {
   filesPath: string;
   downloadPath: string;
   region: string;
+  highSecurity: boolean;
   autoRotation: AutoRotationSettings;
 }
 
@@ -20,9 +22,14 @@ interface SettingsModalProps {
   settings: PathSettings;
   keys: string[];
   onSettingsChange: (settings: PathSettings) => void;
+  onHighSecurityToggle: (enabled: boolean, password?: string) => void;
 }
 
-export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChange }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChange, onHighSecurityToggle }: SettingsModalProps) {
+  const [hsPassword, setHsPassword] = useState('');
+  const [hsConfirm, setHsConfirm] = useState('');
+  const [hsShowInput, setHsShowInput] = useState(false);
+
   if (!isOpen) return null;
 
   const fields = [
@@ -77,6 +84,83 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
         <p className="text-xs text-gray-400 mt-4 mb-6">
           Paths are relative to the project root or absolute.
         </p>
+
+        {/* High Security Mode */}
+        <div className="border-t border-gray-200 pt-5">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
+                <AiOutlineLock className="w-4 h-4 text-amber-500" />
+                High Security Mode
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">Keys are encrypted at rest and only loaded in memory after password unlock</p>
+            </div>
+            {!settings.highSecurity && !hsShowInput && (
+              <button
+                onClick={() => setHsShowInput(true)}
+                className="relative w-10 h-5 rounded-full transition-colors cursor-pointer bg-gray-300"
+                role="switch"
+                aria-checked={false}
+                aria-label="Enable high security mode"
+              >
+                <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow translate-x-0" />
+              </button>
+            )}
+            {settings.highSecurity && (
+              <button
+                onClick={() => { onHighSecurityToggle(false); }}
+                className="relative w-10 h-5 rounded-full transition-colors cursor-pointer bg-amber-500"
+                role="switch"
+                aria-checked={true}
+                aria-label="Disable high security mode"
+              >
+                <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow translate-x-[18px]" />
+              </button>
+            )}
+          </div>
+
+          {hsShowInput && !settings.highSecurity && (
+            <div className="mt-3 space-y-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
+              <p className="text-xs text-amber-700">Choose a password to encrypt your keys. You will need it every time you start the app.</p>
+              <input
+                type="password"
+                value={hsPassword}
+                onChange={(e) => setHsPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+              />
+              <input
+                type="password"
+                value={hsConfirm}
+                onChange={(e) => setHsConfirm(e.target.value)}
+                placeholder="Confirm password"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setHsShowInput(false); setHsPassword(''); setHsConfirm(''); }}
+                  className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (hsPassword && hsPassword === hsConfirm) {
+                      onHighSecurityToggle(true, hsPassword);
+                      setHsShowInput(false);
+                      setHsPassword('');
+                      setHsConfirm('');
+                    }
+                  }}
+                  disabled={!hsPassword || hsPassword !== hsConfirm}
+                  className="px-3 py-1.5 text-xs text-white bg-amber-600 hover:bg-amber-700 rounded-md cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Activate
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Auto Key Rotation */}
         <div className="border-t border-gray-200 pt-5">

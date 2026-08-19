@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
 import { RotationBanner } from './components/RotationBanner';
 import { FolderBreadcrumb } from './components/FolderBreadcrumb';
+import { UnlockBanner } from './components/UnlockBanner';
 import { SettingsModal } from './components/SettingsModal';
 import { UploadModal } from './components/UploadModal';
 import { KeyGenModal } from './components/KeyGenModal';
@@ -76,10 +77,31 @@ function App() {
   const [moveFolderSource, setMoveFolderSource] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
+  const [lockStatus, setLockStatus] = useState<{ highSecurity: boolean; unlocked: boolean }>({ highSecurity: false, unlocked: false });
   const { files, loading, error, updateFileStar, refetch } = useFiles();
   const { settings, saveSettings } = useSettings();
   const { keys, refetchKeys } = useKeys();
   const [folders, setFolders] = useState<string[]>(['/']);
+
+  const fetchLockStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/lock-status');
+      if (res.ok) {
+        const data = await res.json();
+        // Force lock on page load (keys must be re-unlocked after reload)
+        if (data.highSecurity && data.unlocked) {
+          await fetch('/api/lock', { method: 'POST' });
+          setLockStatus({ highSecurity: true, unlocked: false });
+        } else {
+          setLockStatus(data);
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    fetchLockStatus().then(() => refetchKeys());
+  }, [fetchLockStatus, refetchKeys]);
 
   const refetchFolders = useCallback(async () => {
     const f = await getFolders();
@@ -276,6 +298,61 @@ function App() {
     }
   }, [addToast, refetchFolders, refetch]);
 
+  const handleLock = useCallback(async () => {
+    try {
+      await fetch('/api/lock', { method: 'POST' });
+      setLockStatus({ highSecurity: true, unlocked: false });
+      refetchKeys();
+      addToast('success', 'Keys locked');
+    } catch {
+      addToast('error', 'Failed to lock keys');
+    }
+  }, [addToast, refetchKeys]);
+
+  const handleUnlockSuccess = useCallback(() => {
+    setLockStatus({ highSecurity: true, unlocked: true });
+    refetchKeys();
+    addToast('success', 'Keys unlocked');
+  }, [addToast, refetchKeys]);
+
+  const handleHighSecurityToggle = useCallback(async (enabled: boolean, password?: string) => {
+    try {
+      if (enabled && password) {
+        const res = await fetch('/api/high-security/enable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setLockStatus({ highSecurity: true, unlocked: true });
+          addToast('success', `High security enabled. ${data.keyCount} key(s) encrypted.`);
+          refetchKeys();
+        } else {
+          addToast('error', data.error || 'Failed to enable high security');
+        }
+      } else {
+        const res = await fetch('/api/high-security/disable', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          setLockStatus({ highSecurity: false, unlocked: false });
+          addToast('success', 'High security disabled. Keys restored to disk.');
+          refetchKeys();
+        } else {
+          addToast('error', data.error || 'Failed to disable high security');
+        }
+      }
+      // Refresh settings to reflect the change
+      const settingsRes = await fetch('/api/settings');
+      if (settingsRes.ok) {
+        const newSettings = await settingsRes.json();
+        saveSettings(newSettings);
+      }
+    } catch {
+      addToast('error', 'Network error');
+    }
+  }, [addToast, refetchKeys, saveSettings]);
+
   const handleEmergencyRotation = useCallback(async (targetKey: string) => {
     setEmergencyRotationOpen(false);
     addToast('success', 'Emergency rotation started...');
@@ -343,6 +420,9 @@ function App() {
         onSearchChange={setSearchQuery}
         onSettingsOpen={() => setSettingsOpen(true)}
         onEmergencyRotation={() => setEmergencyRotationOpen(true)}
+        highSecurity={lockStatus.highSecurity}
+        unlocked={lockStatus.unlocked}
+        onLock={handleLock}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeSection={activeSection} onSectionChange={(s) => { setActiveSection(s); setCurrentFolder('/'); }} files={files} keys={keys} region={settings.region} onUploadClick={() => setUploadOpen(true)} onGenerateKey={() => setKeyGenOpen(true)} onDeleteKey={(k) => setKeyToDelete(k)} onBackupClick={() => setBackupOpen(true)} />
@@ -377,6 +457,12 @@ function App() {
                 onCreateFolder={handleCreateFolder}
               />
             </div>
+          )}
+          {lockStatus.highSecurity && !lockStatus.unlocked && (
+            <UnlockBanner
+              onUnlockSuccess={handleUnlockSuccess}
+              onError={(err) => addToast('error', err)}
+            />
           )}
           <RotationBanner
             onRotateComplete={() => { refetch(); refetchKeys(); addToast('success', 'Key rotation completed'); }}
@@ -420,6 +506,7 @@ function App() {
         settings={settings}
         keys={keys}
         onSettingsChange={handleSaveSettings}
+        onHighSecurityToggle={handleHighSecurityToggle}
       />
       <UploadModal
         isOpen={uploadOpen}

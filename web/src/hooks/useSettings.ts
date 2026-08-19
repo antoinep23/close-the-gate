@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS: PathSettings = {
   filesPath: './files',
   downloadPath: './download',
   region: 'eu-west-1',
+  highSecurity: false,
   autoRotation: {
     enabled: false,
     intervalDays: 90,

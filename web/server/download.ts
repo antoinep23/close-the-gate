@@ -6,6 +6,7 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
+import { retrieveKey } from './keyStore';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -47,8 +48,7 @@ router.post('/download', async (req, res) => {
   const downloadPath = resolveFromRoot(settings.downloadPath);
 
   try {
-    const key = new Key();
-    key.retrieve(keyName, keysPath);
+    const key = retrieveKey(keyName, keysPath);
 
     const file = new File();
     const outputPath = await file.download(fileName, key, downloadPath);
@@ -80,8 +80,7 @@ router.post('/preview', async (req, res) => {
   const keysPath = resolveFromRoot(settings.keysPath);
 
   try {
-    const key = new Key();
-    key.retrieve(keyName, keysPath);
+    const key = retrieveKey(keyName, keysPath);
 
     const file = new File();
     const buffer = await file.preview(fileName, key);
@@ -180,8 +179,7 @@ router.delete('/files/:fileName', async (req, res) => {
   const keysPath = resolveFromRoot(settings.keysPath);
 
   try {
-    const key = new Key();
-    key.retrieve(keyName, keysPath);
+    const key = retrieveKey(keyName, keysPath);
 
     const file = new File();
     const result = await file.delete(fileName, key);
@@ -229,15 +227,13 @@ router.post('/files/rotate', async (req, res) => {
     const currentFolder = record.Item ? (unmarshall(record.Item).folder || '/') : '/';
 
     // 1. Download & decrypt with current key
-    const currentKey = new Key();
-    currentKey.retrieve(currentKeyName, keysPath);
+    const currentKey = retrieveKey(currentKeyName, keysPath);
 
     const file = new File();
     await file.download(fileName, currentKey, filesPath);
 
     // 2. Re-encrypt and upload with new key FIRST
-    const newKey = new Key();
-    newKey.retrieve(newKeyName, keysPath);
+    const newKey = retrieveKey(newKeyName, keysPath);
 
     const uploadFile = new File();
     await uploadFile.upload(fileName, newKey, filesPath, false, undefined, currentFolder);
@@ -361,15 +357,13 @@ router.post('/files/rotate-batch', async (req, res) => {
 
     try {
       // Download & decrypt with current key
-      const currentKey = new Key();
-      currentKey.retrieve(keyName, keysPath);
+      const currentKey = retrieveKey(keyName, keysPath);
 
       const file = new File();
       await file.download(fileName, currentKey, filesPath);
 
       // Re-encrypt and upload with new key FIRST (before deleting old)
-      const newKey = new Key();
-      newKey.retrieve(actualTargetKey, keysPath);
+      const newKey = retrieveKey(actualTargetKey, keysPath);
 
       const uploadFile = new File();
       await uploadFile.upload(fileName, newKey, filesPath, false, undefined, folder || '/');

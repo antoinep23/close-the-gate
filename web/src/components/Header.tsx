@@ -1,4 +1,4 @@
-import { AiOutlineSearch, AiOutlineSetting, AiOutlineSync } from 'react-icons/ai';
+import { AiOutlineSearch, AiOutlineSetting, AiOutlineSync, AiOutlineLock, AiOutlineUnlock } from 'react-icons/ai';
 import { HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi';
 
 interface HeaderProps {
@@ -8,9 +8,12 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   onSettingsOpen: () => void;
   onEmergencyRotation: () => void;
+  highSecurity?: boolean;
+  unlocked?: boolean;
+  onLock?: () => void;
 }
 
-export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange, onSettingsOpen, onEmergencyRotation }: HeaderProps) {
+export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange, onSettingsOpen, onEmergencyRotation, highSecurity, unlocked, onLock }: HeaderProps) {
   return (
     <header className="h-16 border-b border-gray-200 flex items-center px-4 gap-4 bg-white">
       <div className="flex items-center gap-2">
@@ -54,9 +57,25 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
 
         <div className="w-px h-6 bg-gray-200 mx-1"></div>
 
+        {highSecurity && (
+          <button
+            onClick={onLock}
+            disabled={!unlocked}
+            className={`p-2 rounded-full cursor-pointer transition-colors ${
+              unlocked
+                ? 'text-green-600 hover:bg-green-50'
+                : 'text-amber-500 opacity-60 cursor-not-allowed'
+            }`}
+            aria-label={unlocked ? 'Lock keys' : 'Keys locked'}
+            title={unlocked ? 'Lock keys (clear from memory)' : 'Keys are locked'}
+          >
+            {unlocked ? <AiOutlineUnlock className="w-5 h-5" /> : <AiOutlineLock className="w-5 h-5" />}
+          </button>
+        )}
+
         <button
           onClick={onEmergencyRotation}
-          className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-red-600 cursor-pointer transition-colors"
+          className="p-2 rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 cursor-pointer transition-colors"
           aria-label="Emergency key rotation"
           title="Rotate all keys (emergency)"
         >

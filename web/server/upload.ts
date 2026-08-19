@@ -6,6 +6,7 @@ import multer from 'multer';
 import { randomUUID } from 'crypto';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
+import { retrieveKey } from './keyStore';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -94,8 +95,7 @@ router.post('/upload', (req, res) => {
 
     (async () => {
       try {
-        const key = new Key();
-        key.retrieve(keyName, keysPath);
+        const key = retrieveKey(keyName, keysPath);
 
         const file = new File();
         await file.upload(uploadedFile.originalname, key, filesPath, false, (phase: string, percent: number) => {
