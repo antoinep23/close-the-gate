@@ -1,4 +1,4 @@
-import { AiOutlineSearch, AiOutlineSetting } from 'react-icons/ai';
+import { AiOutlineSearch, AiOutlineSetting, AiOutlineSync } from 'react-icons/ai';
 import { HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi';
 
 interface HeaderProps {
@@ -7,9 +7,10 @@ interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onSettingsOpen: () => void;
+  onEmergencyRotation: () => void;
 }
 
-export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange, onSettingsOpen }: HeaderProps) {
+export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange, onSettingsOpen, onEmergencyRotation }: HeaderProps) {
   return (
     <header className="h-16 border-b border-gray-200 flex items-center px-4 gap-4 bg-white">
       <div className="flex items-center gap-2">
@@ -52,6 +53,15 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
         </button>
 
         <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        <button
+          onClick={onEmergencyRotation}
+          className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-red-600 cursor-pointer transition-colors"
+          aria-label="Emergency key rotation"
+          title="Rotate all keys (emergency)"
+        >
+          <AiOutlineSync className="w-5 h-5" />
+        </button>
 
         <button
           onClick={onSettingsOpen}

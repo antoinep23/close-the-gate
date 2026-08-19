@@ -218,6 +218,16 @@ router.post('/files/rotate', async (req, res) => {
   const filesPath = resolveFromRoot(settings.filesPath);
 
   try {
+    // Read current folder from DynamoDB
+    const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+    const getCmd = new GetItemCommand({
+      TableName: process.env.DYNAMO_TABLE!,
+      Key: { fileName: { S: fileName } },
+      ProjectionExpression: 'folder',
+    });
+    const record = await dynamoClient.send(getCmd);
+    const currentFolder = record.Item ? (unmarshall(record.Item).folder || '/') : '/';
+
     // 1. Download & decrypt with current key
     const currentKey = new Key();
     currentKey.retrieve(currentKeyName, keysPath);
@@ -230,7 +240,7 @@ router.post('/files/rotate', async (req, res) => {
     newKey.retrieve(newKeyName, keysPath);
 
     const uploadFile = new File();
-    await uploadFile.upload(fileName, newKey, filesPath);
+    await uploadFile.upload(fileName, newKey, filesPath, false, undefined, currentFolder);
 
     // 3. Delete old S3 object only (DynamoDB already updated by upload)
     await file.deleteS3Object(fileName, currentKey);
@@ -290,6 +300,7 @@ router.get('/files/rotation-check', async (_req, res) => {
         fileName: record.fileName as string,
         keyName: record.keyName as string,
         uploadDate: record.uploadDate as string,
+        folder: (record.folder as string) || '/',
       }));
 
     res.json({ eligible, count: eligible.length, enabled: true, targetKey });
@@ -341,7 +352,7 @@ router.post('/files/rotate-batch', async (req, res) => {
   const results: Array<{ fileName: string; success: boolean; error?: string }> = [];
 
   for (const entry of files) {
-    const { fileName, keyName } = entry;
+    const { fileName, keyName, folder } = entry;
 
     if (keyName === actualTargetKey) {
       results.push({ fileName, success: true });
@@ -361,7 +372,7 @@ router.post('/files/rotate-batch', async (req, res) => {
       newKey.retrieve(actualTargetKey, keysPath);
 
       const uploadFile = new File();
-      await uploadFile.upload(fileName, newKey, filesPath);
+      await uploadFile.upload(fileName, newKey, filesPath, false, undefined, folder || '/');
 
       // Only delete old S3 object after successful upload (DynamoDB already updated)
       await file.deleteS3Object(fileName, currentKey);
