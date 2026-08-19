@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { AiOutlineFolder, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineFolder, AiOutlineDelete, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { FileCard } from './FileCard';
 import { FileRow } from './FileRow';
@@ -26,6 +26,7 @@ interface FileGridProps {
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   onFolderClick?: (folder: string) => void;
   onDeleteFolder?: (folder: string) => void;
+  onMoveFolderClick?: (folder: string) => void;
   onFileDrop?: (fileName: string, targetFolder: string) => void;
   onFolderDrop?: (sourceFolder: string, targetFolder: string) => void;
   hideDownload?: boolean;
@@ -53,7 +54,7 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onFileDrop, onFolderDrop, hideDownload }: FileGridProps) {
+export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onMoveFolderClick, onFileDrop, onFolderDrop, hideDownload }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
@@ -176,13 +177,23 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   {onPreviewClick && <td className="py-3"></td>}
                   {!hideDownload && <td className="py-3"></td>}
                   {onRotateClick && <td className="py-3"></td>}
-                  {onMoveClick && <td className="py-3"></td>}
-                  <td className="py-3"></td>
+                  {onMoveClick && (
+                    <td className="py-3"></td>
+                  )}
                   <td className="py-3"></td>
                   <td className="py-3">
                     <button
+                      onClick={(e) => { e.stopPropagation(); onMoveFolderClick?.(folder); }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+                      title="Move folder"
+                    >
+                      <AiOutlineFolderOpen className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </td>
+                  <td className="py-3">
+                    <button
                       onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-50 cursor-pointer transition-all"
                       title="Delete folder"
                     >
                       <AiOutlineDelete className="w-4 h-4 text-red-500" />
@@ -255,13 +266,22 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   <span className="text-[11px] text-gray-400">{formatSize(folderSizes[folder])}</span>
                 ) : null}
               </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 cursor-pointer transition-all"
-                title="Delete folder"
-              >
-                <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
-              </button>
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onMoveFolderClick?.(folder); }}
+                  className="p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-colors"
+                  title="Move folder"
+                >
+                  <AiOutlineFolderOpen className="w-3.5 h-3.5 text-gray-500" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
+                  className="p-1 rounded-full hover:bg-red-50 cursor-pointer transition-colors"
+                  title="Delete folder"
+                >
+                  <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
+                </button>
+              </div>
             </div>
           );
         })}

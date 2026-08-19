@@ -21,6 +21,7 @@ import { BackupKeysModal } from './components/BackupKeysModal';
 import { RotateKeyModal } from './components/RotateKeyModal';
 import { PreviewModal } from './components/PreviewModal';
 import { MoveFileModal } from './components/MoveFileModal';
+import { MoveFolderModal } from './components/MoveFolderModal';
 import { EmergencyRotationModal } from './components/EmergencyRotationModal';
 
 function getSectionTitle(section: string): string {
@@ -72,6 +73,7 @@ function App() {
   const [previewFile, setPreviewFile] = useState<{ fileName: string; keyName: string } | null>(null);
   const [moveFile, setMoveFile] = useState<{ fileName: string; folder: string } | null>(null);
   const [emergencyRotationOpen, setEmergencyRotationOpen] = useState(false);
+  const [moveFolderSource, setMoveFolderSource] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
   const { files, loading, error, updateFileStar, refetch } = useFiles();
@@ -404,6 +406,7 @@ function App() {
               onProtectionChange={activeSection !== 'downloaded' ? () => refetch() : undefined}
               onFolderClick={activeSection === 'my-drive' ? setCurrentFolder : undefined}
               onDeleteFolder={activeSection === 'my-drive' ? handleDeleteFolder : undefined}
+              onMoveFolderClick={activeSection === 'my-drive' ? (folder) => setMoveFolderSource(folder) : undefined}
               onFileDrop={activeSection === 'my-drive' ? handleFileDrop : undefined}
               onFolderDrop={activeSection === 'my-drive' ? handleFolderDrop : undefined}
               hideDownload={activeSection === 'downloaded'}
@@ -475,6 +478,14 @@ function App() {
         onClose={() => setMoveFile(null)}
         onSuccess={(fileName, folder) => { addToast('success', `Moved "${fileName}" to ${folder}`); refetch(); }}
         onError={(fileName, err) => addToast('error', `Failed to move "${fileName}": ${err}`)}
+      />
+      <MoveFolderModal
+        isOpen={!!moveFolderSource}
+        sourceFolder={moveFolderSource || ''}
+        folders={folders}
+        onClose={() => setMoveFolderSource(null)}
+        onSuccess={(oldPath, newPath) => { addToast('success', `Moved folder to ${newPath}`); refetchFolders(); refetch(); }}
+        onError={(err) => addToast('error', err)}
       />
       <EmergencyRotationModal
         isOpen={emergencyRotationOpen}
