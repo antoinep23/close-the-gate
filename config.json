@@ -17,5 +17,5 @@
     "/finance",
     "/reports"
   ],
-  "highSecurity": false
+  "highSecurity": true
 }

@@ -56,7 +56,7 @@ export function KeyGenModal({ isOpen, onClose, onSuccess, onError }: KeyGenModal
               value={keyName}
               onChange={(e) => setKeyName(e.target.value)}
               placeholder="my-secret-key"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">Leave empty for auto-generated UUID name</p>
           </div>
@@ -68,7 +68,7 @@ export function KeyGenModal({ isOpen, onClose, onSuccess, onError }: KeyGenModal
             <select
               value={bytes}
               onChange={(e) => setBytes(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
             >
               <option value={16}>16 bytes (128-bit)</option>
               <option value={32}>32 bytes (256-bit)</option>

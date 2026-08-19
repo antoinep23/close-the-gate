@@ -29,7 +29,7 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full bg-gray-100 rounded-full py-2.5 pl-10 pr-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all"
+            className="w-full bg-gray-100 rounded-full py-2.5 pl-10 pr-4 text-sm outline-none focus:bg-white focus:ring-blue-200 transition-all"
           />
         </div>
       </div>

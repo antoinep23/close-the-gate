@@ -137,7 +137,7 @@ export function BackupKeysModal({ isOpen, onClose, onBackupSuccess, onBackupErro
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter a strong password"
-                  className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                  className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
                 />
               </div>
             </div>
@@ -150,7 +150,7 @@ export function BackupKeysModal({ isOpen, onClose, onBackupSuccess, onBackupErro
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your password"
-                  className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                  className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
                 />
               </div>
             </div>
@@ -175,7 +175,7 @@ export function BackupKeysModal({ isOpen, onClose, onBackupSuccess, onBackupErro
                 <select
                   value={selectedBackup}
                   onChange={(e) => setSelectedBackup(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
                 >
                   {backups.map((b) => (
                     <option key={b.fileName} value={b.fileName}>
@@ -194,7 +194,7 @@ export function BackupKeysModal({ isOpen, onClose, onBackupSuccess, onBackupErro
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter backup password"
-                  className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                  className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
                 />
               </div>
             </div>

@@ -75,7 +75,7 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
                   onSettingsChange({ ...settings, [field.key]: e.target.value })
                 }
                 placeholder={field.placeholder}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
               />
             </div>
           ))}
@@ -86,19 +86,19 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
         </p>
 
         {/* High Security Mode */}
-        <div className="border-t border-gray-200 pt-5">
+        <div className="border-t border-gray-200 py-5">
           <div className="flex items-center justify-between mb-2">
             <div>
               <h3 className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
-                <AiOutlineLock className="w-4 h-4 text-amber-500" />
                 High Security Mode
+                <AiOutlineLock className="w-4 h-4 text-amber-500" />
               </h3>
               <p className="text-xs text-gray-400 mt-0.5">Keys are encrypted at rest and only loaded in memory after password unlock</p>
             </div>
             {!settings.highSecurity && !hsShowInput && (
               <button
                 onClick={() => setHsShowInput(true)}
-                className="relative w-10 h-5 rounded-full transition-colors cursor-pointer bg-gray-300"
+                className="relative w-12 h-5 rounded-full transition-colors cursor-pointer bg-gray-300"
                 role="switch"
                 aria-checked={false}
                 aria-label="Enable high security mode"
@@ -109,32 +109,32 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
             {settings.highSecurity && (
               <button
                 onClick={() => { onHighSecurityToggle(false); }}
-                className="relative w-10 h-5 rounded-full transition-colors cursor-pointer bg-amber-500"
+                className="relative w-12 h-5 rounded-full transition-colors cursor-pointer bg-blue-500"
                 role="switch"
                 aria-checked={true}
                 aria-label="Disable high security mode"
               >
-                <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow translate-x-[18px]" />
+                <span className="absolute top-0.5 left-1 w-4 h-4 bg-white rounded-full shadow translate-x-[18px]" />
               </button>
             )}
           </div>
 
           {hsShowInput && !settings.highSecurity && (
-            <div className="mt-3 space-y-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
-              <p className="text-xs text-amber-700">Choose a password to encrypt your keys. You will need it every time you start the app.</p>
+            <div className="mt-3 space-y-3 bg-gray-50 border border-gray-100 rounded-lg p-3">
+              <p className="text-xs text-gray-700">Choose a password to encrypt your keys. You will need it every time you start the app.</p>
               <input
                 type="password"
                 value={hsPassword}
                 onChange={(e) => setHsPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
               />
               <input
                 type="password"
                 value={hsConfirm}
                 onChange={(e) => setHsConfirm(e.target.value)}
                 placeholder="Confirm password"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
               />
               <div className="flex gap-2">
                 <button
@@ -153,7 +153,7 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
                     }
                   }}
                   disabled={!hsPassword || hsPassword !== hsConfirm}
-                  className="px-3 py-1.5 text-xs text-white bg-amber-600 hover:bg-amber-700 rounded-md cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-md cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Activate
                 </button>
@@ -172,7 +172,7 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
             <button
               onClick={() => updateAutoRotation({ enabled: !autoRotation.enabled })}
               className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${
-                autoRotation.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                autoRotation.enabled ? 'bg-blue-500' : 'bg-gray-300'
               }`}
               role="switch"
               aria-checked={autoRotation.enabled}
@@ -201,7 +201,7 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
                     const val = parseInt(e.target.value);
                     if (!isNaN(val)) updateAutoRotation({ intervalDays: val });
                   }}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 transition-all ${
+                  className={`w-full border rounded-lg px-3 py-2 text-sm outline-none transition-all ${
                     autoRotation.intervalDays >= 1 && autoRotation.intervalDays <= 365
                       ? 'border-gray-300 focus:ring-blue-200 focus:border-blue-400'
                       : 'border-red-300 focus:ring-red-200 focus:border-red-400'
@@ -225,22 +225,24 @@ export function SettingsModal({ isOpen, onClose, settings, keys, onSettingsChang
                 {keys.length === 0 ? (
                   <p className="text-sm text-red-500">No keys available. Generate one first.</p>
                 ) : (
-                  <select
-                    value={autoRotation.targetKey}
-                    onChange={(e) => updateAutoRotation({ targetKey: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
-                  >
-                    <option value="__auto_generate__">Auto-generate new key</option>
-                    {keys.map((k) => (
-                      <option key={k} value={k}>{k}</option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      value={autoRotation.targetKey}
+                      onChange={(e) => updateAutoRotation({ targetKey: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
+                    >
+                      <option value="__auto_generate__">Auto-generate new key</option>
+                      {keys.map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {autoRotation.targetKey === '__auto_generate__'
+                        ? 'A new key will be generated at each rotation'
+                        : 'All eligible files will be rotated to this key'}
+                    </p>
+                </>
                 )}
-                <p className="text-xs text-gray-400 mt-1">
-                  {autoRotation.targetKey === '__auto_generate__'
-                    ? 'A new key will be generated at each rotation'
-                    : 'All eligible files will be rotated to this key'}
-                </p>
               </div>
             </div>
           )}

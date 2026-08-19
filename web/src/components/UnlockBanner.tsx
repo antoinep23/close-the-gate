@@ -49,7 +49,7 @@ export function UnlockBanner({ onUnlockSuccess, onError }: UnlockBannerProps) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="flex-1 border border-amber-300 rounded-md px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 bg-white transition-all"
+          className="flex-1 border border-amber-300 rounded-md px-3 py-1.5 text-sm outline-none focus:ring-amber-200 focus:border-amber-400 bg-white transition-all"
           autoFocus
         />
         <button
