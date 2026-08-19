@@ -10,12 +10,14 @@
     "ts": "npx tsc && node --env-file=.env dist/main.js",
     "web": "cd web && npm run start",
     "build": "npx tsc",
-    "test": "npm run test",
+    "test": "vitest run",
+    "test:web" : "cd web && npm test",
     "cli-init": "npm link"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1101.0",

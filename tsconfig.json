@@ -9,5 +9,5 @@
     "rootDir": "src"
   },
   "lib": ["es2015"],
-  "exclude": ["web"]
+  "exclude": ["web", "tests", "vitest.config.ts"]
 }
