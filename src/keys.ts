@@ -99,6 +99,16 @@ export default class Key {
     }
 
     /**
+     * Load a key from a raw Buffer (for high-security mode where keys live only in RAM).
+     * No disk access is performed.
+     */
+    public retrieveFromBuffer(keyName: string, buffer: Buffer): KeyObject {
+        this.id = keyName.replace(/\.pem$/, '');
+        this.material = createSecretKey(buffer);
+        return this.material;
+    }
+
+    /**
      * Create a password-protected backup of all keys in a directory.
      * Format: [salt 32B][iv 12B][authTag 16B][encrypted JSON payload]
      * Encryption: AES-256-GCM with key derived via PBKDF2 (600k iterations, SHA-512)

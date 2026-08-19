@@ -6,6 +6,8 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
+import { retrieveKey, isHighSecurity, isUnlocked, keyStore, getSessionPassword } from './keyStore';
+import { randomBytes, createSecretKey } from 'crypto';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -47,8 +49,7 @@ router.post('/download', async (req, res) => {
   const downloadPath = resolveFromRoot(settings.downloadPath);
 
   try {
-    const key = new Key();
-    key.retrieve(keyName, keysPath);
+    const key = retrieveKey(keyName, keysPath);
 
     const file = new File();
     const outputPath = await file.download(fileName, key, downloadPath);
@@ -80,8 +81,7 @@ router.post('/preview', async (req, res) => {
   const keysPath = resolveFromRoot(settings.keysPath);
 
   try {
-    const key = new Key();
-    key.retrieve(keyName, keysPath);
+    const key = retrieveKey(keyName, keysPath);
 
     const file = new File();
     const buffer = await file.preview(fileName, key);
@@ -180,8 +180,7 @@ router.delete('/files/:fileName', async (req, res) => {
   const keysPath = resolveFromRoot(settings.keysPath);
 
   try {
-    const key = new Key();
-    key.retrieve(keyName, keysPath);
+    const key = retrieveKey(keyName, keysPath);
 
     const file = new File();
     const result = await file.delete(fileName, key);
@@ -229,21 +228,23 @@ router.post('/files/rotate', async (req, res) => {
     const currentFolder = record.Item ? (unmarshall(record.Item).folder || '/') : '/';
 
     // 1. Download & decrypt with current key
-    const currentKey = new Key();
-    currentKey.retrieve(currentKeyName, keysPath);
+    const currentKey = retrieveKey(currentKeyName, keysPath);
 
     const file = new File();
     await file.download(fileName, currentKey, filesPath);
 
     // 2. Re-encrypt and upload with new key FIRST
-    const newKey = new Key();
-    newKey.retrieve(newKeyName, keysPath);
+    const newKey = retrieveKey(newKeyName, keysPath);
 
     const uploadFile = new File();
     await uploadFile.upload(fileName, newKey, filesPath, false, undefined, currentFolder);
 
     // 3. Delete old S3 object only (DynamoDB already updated by upload)
     await file.deleteS3Object(fileName, currentKey);
+
+    // 4. Clean up local file
+    const localPath = path.join(filesPath, fileName);
+    if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
 
     res.json({ success: true, message: `Key rotated for "${fileName}"` });
   } catch (err: unknown) {
@@ -336,17 +337,45 @@ router.post('/files/rotate-batch', async (req, res) => {
     const date = new Date().toISOString().slice(0, 10);
     const prefix = `auto-rotation-${date}`;
 
-    // Find next available increment
-    const existingKeys = fs.existsSync(keysPath) ? fs.readdirSync(keysPath) : [];
+    // Find next available increment (check both disk and RAM store)
+    const diskKeys = fs.existsSync(keysPath) ? fs.readdirSync(keysPath) : [];
+    const ramKeys = isHighSecurity() ? Array.from(keyStore.keys()) : [];
+    const allKeys = [...new Set([...diskKeys, ...ramKeys])];
     let increment = 1;
-    while (existingKeys.includes(`${prefix}_${increment}.pem`)) {
+    while (allKeys.includes(`${prefix}_${increment}.pem`)) {
       increment++;
     }
 
     const keyName = `${prefix}_${increment}`;
-    const autoKey = new Key();
-    autoKey.generate(32, keyName, keysPath);
     actualTargetKey = `${keyName}.pem`;
+
+    if (isHighSecurity() && isUnlocked()) {
+      // Generate key in RAM only
+      const rawKey = randomBytes(32);
+      keyStore.set(actualTargetKey, rawKey);
+
+      // Update backup
+      const sessionPwd = getSessionPassword();
+      if (sessionPwd) {
+        fs.mkdirSync(keysPath, { recursive: true });
+        for (const [name, buffer] of keyStore.entries()) {
+          fs.writeFileSync(path.join(keysPath, name), buffer, { mode: 0o600 });
+        }
+        const backupPath = Key.backup(sessionPwd, keysPath, keysPath);
+        const targetBackupPath = path.join(keysPath, 'high-security.ctg-backup');
+        if (backupPath !== targetBackupPath) {
+          fs.renameSync(backupPath, targetBackupPath);
+        }
+        for (const name of keyStore.keys()) {
+          const p = path.join(keysPath, name);
+          if (fs.existsSync(p)) fs.unlinkSync(p);
+        }
+      }
+    } else {
+      // Normal mode: generate on disk
+      const autoKey = new Key();
+      autoKey.generate(32, keyName, keysPath);
+    }
   }
 
   const results: Array<{ fileName: string; success: boolean; error?: string }> = [];
@@ -361,21 +390,23 @@ router.post('/files/rotate-batch', async (req, res) => {
 
     try {
       // Download & decrypt with current key
-      const currentKey = new Key();
-      currentKey.retrieve(keyName, keysPath);
+      const currentKey = retrieveKey(keyName, keysPath);
 
       const file = new File();
       await file.download(fileName, currentKey, filesPath);
 
       // Re-encrypt and upload with new key FIRST (before deleting old)
-      const newKey = new Key();
-      newKey.retrieve(actualTargetKey, keysPath);
+      const newKey = retrieveKey(actualTargetKey, keysPath);
 
       const uploadFile = new File();
       await uploadFile.upload(fileName, newKey, filesPath, false, undefined, folder || '/');
 
       // Only delete old S3 object after successful upload (DynamoDB already updated)
       await file.deleteS3Object(fileName, currentKey);
+
+      // Clean up local file
+      const localPath = path.join(filesPath, fileName);
+      if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
 
       results.push({ fileName, success: true });
     } catch (err: unknown) {

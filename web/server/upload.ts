@@ -6,6 +6,7 @@ import multer from 'multer';
 import { randomUUID } from 'crypto';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
+import { retrieveKey } from './keyStore';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -94,13 +95,18 @@ router.post('/upload', (req, res) => {
 
     (async () => {
       try {
-        const key = new Key();
-        key.retrieve(keyName, keysPath);
+        const key = retrieveKey(keyName, keysPath);
 
         const file = new File();
         await file.upload(uploadedFile.originalname, key, filesPath, false, (phase: string, percent: number) => {
           progressStore.set(uploadId, { phase, percent, done: false });
         }, folder);
+
+        // Delete local file after successful upload (no need to keep it on disk)
+        const localFilePath = path.join(filesPath, uploadedFile.originalname);
+        if (fs.existsSync(localFilePath)) {
+          fs.unlinkSync(localFilePath);
+        }
 
         progressStore.set(uploadId, { phase: 'complete', percent: 100, done: true });
       } catch (err: unknown) {

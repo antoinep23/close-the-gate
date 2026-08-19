@@ -11,6 +11,7 @@ import { unmarshall } from '@aws-sdk/util-dynamodb';
 import downloadRouter from './download';
 import uploadRouter from './upload';
 import KeyModule from '../../src/keys';
+import { keyStore, isUnlocked, setUnlocked, resetLockTimeout, clearLockTimeout, isHighSecurity, retrieveKey, setSessionPassword, getSessionPassword, secureWipe } from './keyStore';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -62,10 +63,173 @@ app.put('/api/settings', (req, res) => {
   }
 });
 
+// --- High Security: unlock / lock / status endpoints ---
+
+app.get('/api/lock-status', (_req, res) => {
+  res.json({ highSecurity: isHighSecurity(), unlocked: isUnlocked() });
+});
+
+app.post('/api/unlock', (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    res.status(400).json({ error: 'password is required' });
+    return;
+  }
+
+  if (!isHighSecurity()) {
+    res.status(400).json({ error: 'High security mode is not enabled' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    const backupPath = path.join(keysDir, 'high-security.ctg-backup');
+
+    if (!fs.existsSync(backupPath)) {
+      res.status(404).json({ error: 'high-security.ctg-backup not found' });
+      return;
+    }
+
+    // Decrypt backup and load keys into RAM
+    const restoredKeys = Key.restore(password, backupPath, keysDir);
+
+    // Load into memory store (read the restored files then delete them)
+    keyStore.clear();
+    for (const keyName of restoredKeys) {
+      const keyPath = path.join(keysDir, keyName);
+      const buffer = fs.readFileSync(keyPath);
+      keyStore.set(keyName, buffer);
+      // Delete from disk immediately (high-security: no keys on disk)
+      fs.unlinkSync(keyPath);
+    }
+
+    setUnlocked(true);
+    setSessionPassword(password);
+    resetLockTimeout();
+
+    res.json({ success: true, keyCount: restoredKeys.length });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(401).json({ error: message });
+  }
+});
+
+app.post('/api/lock', (_req, res) => {
+  secureWipe();
+  clearLockTimeout();
+  res.json({ success: true });
+});
+
+app.post('/api/high-security/enable', (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    res.status(400).json({ error: 'password is required' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    // Create the high-security backup
+    const backupPath = Key.backup(password, keysDir, keysDir);
+    // Rename to high-security.ctg-backup
+    const targetPath = path.join(keysDir, 'high-security.ctg-backup');
+    if (backupPath !== targetPath) {
+      fs.renameSync(backupPath, targetPath);
+    }
+
+    // Load keys into RAM before deleting from disk
+    const pemFiles = fs.readdirSync(keysDir).filter((f: string) => f.endsWith('.pem'));
+    keyStore.clear();
+    for (const keyName of pemFiles) {
+      const keyPath = path.join(keysDir, keyName);
+      const buffer = fs.readFileSync(keyPath);
+      keyStore.set(keyName, buffer);
+      fs.unlinkSync(keyPath);
+    }
+
+    setUnlocked(true);
+    setSessionPassword(password);
+    resetLockTimeout();
+
+    // Update config
+    settings.highSecurity = true;
+    fs.writeFileSync(configPath, JSON.stringify(settings, null, 2) + '\n');
+
+    res.json({ success: true, keyCount: pemFiles.length });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('High security enable error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post('/api/high-security/disable', (_req, res) => {
+  if (!isUnlocked()) {
+    res.status(403).json({ error: 'Keys must be unlocked before disabling high security mode.' });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysDir = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    // Write keys back to disk from RAM
+    fs.mkdirSync(keysDir, { recursive: true });
+    for (const [keyName, buffer] of keyStore.entries()) {
+      fs.writeFileSync(path.join(keysDir, keyName), buffer, { mode: 0o600 });
+    }
+
+    // Remove the backup file
+    const backupPath = path.join(keysDir, 'high-security.ctg-backup');
+    if (fs.existsSync(backupPath)) {
+      fs.unlinkSync(backupPath);
+    }
+
+    // Securely wipe keys from memory
+    secureWipe();
+    clearLockTimeout();
+
+    // Update config
+    settings.highSecurity = false;
+    fs.writeFileSync(configPath, JSON.stringify(settings, null, 2) + '\n');
+
+    res.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('High security disable error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
 // --- Keys listing endpoint ---
 
 app.get('/api/keys', (_req, res) => {
   try {
+    // In high-security mode, return keys from RAM store
+    if (isHighSecurity()) {
+      if (!isUnlocked()) {
+        res.json([]);
+        return;
+      }
+      res.json(Array.from(keyStore.keys()));
+      return;
+    }
+
     const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const projectRoot = path.resolve(configPath, '..');
     const keysDir = path.isAbsolute(settings.keysPath)
@@ -100,14 +264,44 @@ app.post('/api/keys', (req, res) => {
 
     const rawKey = randomBytes(keyBytes);
     const keyMaterial = createSecretKey(rawKey);
-
-    fs.mkdirSync(keysDir, { recursive: true });
     const fileName = keyName ? `${keyName}.pem` : `${randomUUID()}.pem`;
-    const filePath = path.join(keysDir, fileName);
 
-    fs.writeFileSync(filePath, keyMaterial.export(), { mode: 0o600 });
+    if (isHighSecurity()) {
+      if (!isUnlocked()) {
+        res.status(403).json({ error: 'Keys are locked. Unlock first.' });
+        return;
+      }
 
-    res.json({ success: true, keyName: fileName, path: filePath });
+      // Add to RAM store
+      keyStore.set(fileName, Buffer.from(keyMaterial.export()));
+
+      // Update the backup file with all current keys using session password
+      const sessionPwd = getSessionPassword();
+      if (sessionPwd) {
+        fs.mkdirSync(keysDir, { recursive: true });
+        // Write all keys temporarily to create backup
+        for (const [name, buffer] of keyStore.entries()) {
+          fs.writeFileSync(path.join(keysDir, name), buffer, { mode: 0o600 });
+        }
+        const backupPath = Key.backup(sessionPwd, keysDir, keysDir);
+        const targetPath = path.join(keysDir, 'high-security.ctg-backup');
+        if (backupPath !== targetPath) {
+          fs.renameSync(backupPath, targetPath);
+        }
+        // Delete all .pem files from disk
+        for (const name of keyStore.keys()) {
+          const p = path.join(keysDir, name);
+          if (fs.existsSync(p)) fs.unlinkSync(p);
+        }
+      }
+
+      res.json({ success: true, keyName: fileName });
+    } else {
+      fs.mkdirSync(keysDir, { recursive: true });
+      const filePath = path.join(keysDir, fileName);
+      fs.writeFileSync(filePath, keyMaterial.export(), { mode: 0o600 });
+      res.json({ success: true, keyName: fileName, path: filePath });
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Key generation error:', message);

@@ -74,7 +74,7 @@ export function RotateKeyModal({ isOpen, fileName, currentKeyName, keys, onClose
               <select
                 value={selectedKey}
                 onChange={(e) => setSelectedKey(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-blue-200 focus:border-blue-400 transition-all"
               >
                 {availableKeys.map((k) => (
                   <option key={k} value={k}>{k}</option>
