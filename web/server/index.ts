@@ -494,7 +494,7 @@ app.post('/api/folders', (req, res) => {
   }
 });
 
-app.delete('/api/folders', (req, res) => {
+app.delete('/api/folders', async (req, res) => {
   const { folder } = req.body;
 
   if (!folder || folder === '/') {
@@ -509,6 +509,22 @@ app.delete('/api/folders', (req, res) => {
     const index = folders.indexOf(folder);
     if (index === -1) {
       res.status(404).json({ error: 'Folder not found' });
+      return;
+    }
+
+    // Check if folder or sub-folders contain files
+    const result = await dynamoClient.send(new ScanCommand({ TableName: tableName }));
+    const items = (result.Items || []).map((item) => unmarshall(item));
+    const filesInFolder = items.filter((item) => {
+      const fileFolder = item.folder || '/';
+      return fileFolder === folder || fileFolder.startsWith(folder + '/');
+    });
+
+    if (filesInFolder.length > 0) {
+      res.status(409).json({
+        error: `Folder contains ${filesInFolder.length} file(s). Move or delete them first.`,
+        fileCount: filesInFolder.length,
+      });
       return;
     }
 
