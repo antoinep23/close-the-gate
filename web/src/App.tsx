@@ -571,7 +571,7 @@ function App() {
         sourceFolder={moveFolderSource || ''}
         folders={folders}
         onClose={() => setMoveFolderSource(null)}
-        onSuccess={(oldPath, newPath) => { addToast('success', `Moved folder to ${newPath}`); refetchFolders(); refetch(); }}
+        onSuccess={(_, newPath) => { addToast('success', `Moved folder to ${newPath}`); refetchFolders(); refetch(); }}
         onError={(err) => addToast('error', err)}
       />
       <EmergencyRotationModal

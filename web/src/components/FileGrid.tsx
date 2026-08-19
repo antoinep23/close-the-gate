@@ -230,7 +230,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
   return (
     <div className="p-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 auto-rows-fr">
-        {hasSubFolders && subFolders.map((folder) => {
+        {hasSubFolders && subFolders?.map((folder) => {
           const name = folder.split('/').pop() || folder;
           return (
             <div
