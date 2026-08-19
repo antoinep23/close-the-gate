@@ -44,6 +44,19 @@ function getSubFolders(currentFolder: string, allFolders: string[]): string[] {
   });
 }
 
+function computeFolderSizes(allFiles: FileItem[], subFolders: string[]): Record<string, number> {
+  const sizes: Record<string, number> = {};
+  for (const folder of subFolders) {
+    sizes[folder] = allFiles
+      .filter((f) => {
+        const fileFolder = f.folder || '/';
+        return fileFolder === folder || fileFolder.startsWith(folder + '/');
+      })
+      .reduce((sum, f) => sum + f.size, 0);
+  }
+  return sizes;
+}
+
 function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [activeSection, setActiveSection] = useState('my-drive');
@@ -341,6 +354,7 @@ function App() {
             <FileGrid
               files={displayFiles}
               subFolders={activeSection === 'my-drive' ? getSubFolders(currentFolder, folders).filter((f) => !searchQuery || f.split('/').pop()!.toLowerCase().includes(searchQuery.toLowerCase())) : undefined}
+              folderSizes={activeSection === 'my-drive' ? computeFolderSizes(files, getSubFolders(currentFolder, folders)) : undefined}
               viewMode={viewMode}
               onDownloadSuccess={onDownloadSuccess}
               onDownloadError={onDownloadError}

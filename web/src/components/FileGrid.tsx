@@ -10,6 +10,7 @@ type SortDirection = 'asc' | 'desc';
 interface FileGridProps {
   files: FileItem[];
   subFolders?: string[];
+  folderSizes?: Record<string, number>;
   viewMode: 'grid' | 'list';
   onDownloadSuccess?: (fileName: string) => void;
   onDownloadError?: (fileName: string, error: string) => void;
@@ -52,7 +53,7 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onFileDrop, onFolderDrop, hideDownload }: FileGridProps) {
+export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onFileDrop, onFolderDrop, hideDownload }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
@@ -161,7 +162,7 @@ export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDow
                     </div>
                   </td>
                   <td className="py-3 text-sm text-gray-300">—</td>
-                  <td className="py-3 text-sm text-gray-300">—</td>
+                  <td className="py-3 text-sm text-gray-400">{folderSizes?.[folder] ? formatSize(folderSizes[folder]) : '—'}</td>
                   {onPreviewClick && <td className="py-3"></td>}
                   {!hideDownload && <td className="py-3"></td>}
                   {onRotateClick && <td className="py-3"></td>}
@@ -240,6 +241,9 @@ export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDow
                   <AiOutlineFolder className="w-6 h-6 text-blue-500" />
                 </div>
                 <span className="text-sm text-gray-800 font-medium truncate max-w-full px-1">{name}</span>
+                {folderSizes?.[folder] ? (
+                  <span className="text-[11px] text-gray-400">{formatSize(folderSizes[folder])}</span>
+                ) : null}
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
@@ -273,4 +277,11 @@ export function FileGrid({ files, subFolders, viewMode, onDownloadSuccess, onDow
       </div>
     </div>
   );
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
