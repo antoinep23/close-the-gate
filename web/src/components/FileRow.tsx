@@ -40,10 +40,17 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
     }
   }
 
+  function handleDoubleClick() {
+    if (onPreviewClick && !confirmOpen && !deleting) {
+      onPreviewClick(file.fileName, file.keyName);
+    }
+  }
+
   return (
     <>
       <tr
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         draggable
         onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
         className="group border-b border-gray-300 hover:bg-gray-100 transition-colors"
