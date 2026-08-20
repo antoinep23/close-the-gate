@@ -1,4 +1,4 @@
-import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload, AiOutlinePlus, AiOutlineDelete, AiOutlineSave } from 'react-icons/ai';
+import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload, AiOutlinePlus, AiOutlineDelete, AiOutlineSave, AiOutlineClockCircle } from 'react-icons/ai';
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
 import type { FileCategory } from '../utils/fileIcons';
@@ -21,6 +21,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'my-drive', label: 'All Files', icon: HiOutlineFolderOpen },
+  { id: 'recent', label: 'Recent', icon: AiOutlineClockCircle },
   { id: 'starred', label: 'Starred', icon: AiOutlineStar },
   { id: 'downloaded', label: 'Downloaded', icon: AiOutlineDownload },
 ];

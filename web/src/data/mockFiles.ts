@@ -5,5 +5,6 @@ export interface FileItem {
   isStarred: boolean;
   isProtected: boolean;
   folder: string;
+  lastOpenedAt: string | null;
   keyName: string;
 }

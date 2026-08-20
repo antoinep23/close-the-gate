@@ -2,6 +2,7 @@ import type { FileItem } from '../data/mockFiles';
 
 export function getSectionTitle(section: string): string {
   if (section === 'my-drive') return 'All Files';
+  if (section === 'recent') return 'Recent';
   if (section === 'starred') return 'Starred';
   if (section === 'downloaded') return 'Downloaded';
   if (section.startsWith('category-')) {

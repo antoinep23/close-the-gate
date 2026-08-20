@@ -672,6 +672,7 @@ app.get('/api/files', async (_req, res) => {
         isStarred: Boolean(record.isStarred),
         isProtected: Boolean(record.isProtected),
         folder: record.folder || '/',
+        lastOpenedAt: record.lastOpenedAt || null,
         keyName: record.keyName
       };
     });
