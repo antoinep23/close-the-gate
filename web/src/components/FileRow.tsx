@@ -46,7 +46,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         onClick={handleClick}
         draggable
         onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
-        className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+        className="group border-b border-gray-300 hover:bg-gray-100 transition-colors"
       >
         <td className="py-3 px-2">
           <div className="flex items-center gap-3">
@@ -60,7 +60,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           <td className="py-3">
             <button
               onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
               aria-label={`Preview ${file.fileName}`}
               title="Preview"
             >
@@ -73,7 +73,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             <button
               onClick={handleDownload}
               disabled={downloading}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
               aria-label={`Download ${file.fileName}`}
               title="Download"
             >
@@ -89,7 +89,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           <td className="py-3">
             <button
               onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
               aria-label={`Rotate key for ${file.fileName}`}
               title="Rotate key"
             >
@@ -117,8 +117,8 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
               onClick={handleLock}
               className={`p-1 rounded-full cursor-pointer transition-all ${
                 isProtected
-                  ? 'text-amber-500 hover:bg-gray-100'
-                  : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-100'
+                  ? 'text-amber-500 hover:bg-gray-200'
+                  : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-200'
               }`}
               aria-label={isProtected ? 'Unlock deletion' : 'Lock deletion'}
               title={isProtected ? 'Remove deletion protection' : 'Protect from deletion'}
@@ -131,7 +131,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           <td className="py-3">
             <button
               onClick={(e) => { e.stopPropagation(); onMoveClick(file.fileName, file.folder || '/'); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
               aria-label={`Move ${file.fileName}`}
               title="Move to folder"
             >
@@ -144,19 +144,19 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-50 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full cursor-pointer transition-all"
               aria-label={`Delete ${file.fileName}`}
               title={isLocalDelete ? 'Remove from local' : 'Delete from cloud bucket'}
             >
               {deleting ? (
                 <AiOutlineLoading3Quarters className="w-4 h-4 text-red-500 animate-spin" />
               ) : (
-                <AiOutlineDelete className="w-4 h-4 text-red-500" />
+                <AiOutlineDelete className="w-4 h-4 text-gray-500 hover:text-red-500" />
               )}
             </button>
           ) : (
             <span className="opacity-0 group-hover:opacity-100 px-1 mt-1 inline-block" title="Deletion protected">
-              <AiOutlineDelete className="w-4 h-4 text-gray-200" />
+              <AiOutlineDelete className="w-4 h-4 text-gray-300" />
             </span>
           )}
         </td>

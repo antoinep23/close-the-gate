@@ -154,10 +154,10 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                       if (fileName && onFileDrop) onFileDrop(fileName, folder);
                     }
                   }}
-                  className={`group border-b border-gray-300 cursor-pointer transition-colors ${
+                  className={`group border-b border-gray-300 transition-colors ${
                     dragOverFolder === folder
                       ? 'bg-blue-50 ring-1 ring-blue-200 ring-inset'
-                      : 'hover:bg-gray-50'
+                      : 'hover:bg-gray-100'
                   }`}
                 >
                   <td className="py-3 px-2">
@@ -177,7 +177,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                     <td className="py-3">
                       <button
                         onClick={(e) => { e.stopPropagation(); onMoveFolderClick?.(folder); }}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
                         title="Move folder"
                       >
                         <AiOutlineFolderOpen className="w-4 h-4 text-gray-500" />
@@ -187,10 +187,10 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   <td className="py-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-50 cursor-pointer transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded-full cursor-pointer transition-all"
                       title="Delete folder"
                     >
-                      <AiOutlineDelete className="w-4 h-4 text-red-500" />
+                      <AiOutlineDelete className="w-4 h-4 text-gray-500 hover:text-red-500" />
                     </button>
                   </td>
                 </tr>
@@ -245,7 +245,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   if (fileName && onFileDrop) onFileDrop(fileName, folder);
                 }
               }}
-              className={`group relative rounded-xl p-4 cursor-pointer transition-all flex flex-col h-full ${
+              className={`group relative rounded-xl p-4 transition-all flex flex-col h-full ${
                 dragOverFolder === folder
                   ? 'bg-blue-50 ring-1 ring-blue-200'
                   : 'bg-gray-50 hover:bg-gray-100'

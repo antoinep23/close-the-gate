@@ -45,7 +45,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       onClick={handleClick}
       draggable
       onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
-      className="group relative border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm cursor-pointer transition-all flex flex-col h-full"
+      className="group relative border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all flex flex-col h-full"
     >
       {/* Persistent badges */}
       <div className="absolute top-2 right-2 flex items-center gap-0.5">
