@@ -35,14 +35,16 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
   });
 
   function handleClick() {
-    if (onFileOpen && !confirmOpen && !deleting) {
-      onFileOpen(file.fileName);
-    }
+    onSelect?.();
   }
 
   function handleDoubleClick() {
-    if (onPreviewClick && !confirmOpen && !deleting) {
-      onPreviewClick(file.fileName, file.keyName);
+    if (!confirmOpen && !deleting) {
+      if (onPreviewClick) {
+        onPreviewClick(file.fileName, file.keyName);
+      } else if (onFileOpen) {
+        onFileOpen(file.fileName);
+      }
     }
   }
 
