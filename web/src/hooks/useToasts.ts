@@ -5,7 +5,7 @@ export function useToasts() {
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const addToast = useCallback((type: 'success' | 'error', message: string) => {
-    const id = crypto.randomUUID();
+    const id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setToasts((prev) => [...prev, { id, type, message }]);
   }, []);
 
