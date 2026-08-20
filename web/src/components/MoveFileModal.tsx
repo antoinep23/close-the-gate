@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { AiOutlineClose, AiOutlineFolder } from 'react-icons/ai';
+import { AiOutlineClose } from 'react-icons/ai';
 import { moveFile } from '../services/api';
+import { FolderTree } from './FolderTree';
 
 interface MoveFileModalProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ export function MoveFileModal({ isOpen, fileName, currentFolder, folders, onClos
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Current folder</label>
-            <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2">{currentFolder === '/' ? '/ (root)' : currentFolder}</p>
+            <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2">{currentFolder === '/' ? 'Root' : currentFolder.split('/').filter(Boolean).pop()}</p>
           </div>
 
           <div>
@@ -65,22 +66,11 @@ export function MoveFileModal({ isOpen, fileName, currentFolder, folders, onClos
             {availableFolders.length === 0 ? (
               <p className="text-sm text-gray-400 italic">No other folders available</p>
             ) : (
-              <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                {availableFolders.map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setSelectedFolder(f)}
-                    className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm cursor-pointer transition-colors ${
-                      selectedFolder === f
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <AiOutlineFolder className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <span className="truncate">{f === '/' ? '/ (root)' : f}</span>
-                  </button>
-                ))}
-              </div>
+              <FolderTree
+                folders={availableFolders}
+                selectedFolder={selectedFolder}
+                onSelect={setSelectedFolder}
+              />
             )}
           </div>
         </div>

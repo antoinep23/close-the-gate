@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { AiOutlineClose, AiOutlineFolder } from 'react-icons/ai';
+import { AiOutlineClose } from 'react-icons/ai';
 import { moveFolderInto } from '../services/api';
+import { FolderTree } from './FolderTree';
 
 interface MoveFolderModalProps {
   isOpen: boolean;
@@ -77,22 +78,11 @@ export function MoveFolderModal({ isOpen, sourceFolder, folders, onClose, onSucc
             {availableFolders.length === 0 ? (
               <p className="text-sm text-gray-400 italic">No valid destination available</p>
             ) : (
-              <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                {availableFolders.map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setSelectedFolder(f)}
-                    className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm cursor-pointer transition-colors ${
-                      selectedFolder === f
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <AiOutlineFolder className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <span className="truncate">{f === '/' ? '/ (root)' : f}</span>
-                  </button>
-                ))}
-              </div>
+              <FolderTree
+                folders={availableFolders}
+                selectedFolder={selectedFolder}
+                onSelect={setSelectedFolder}
+              />
             )}
           </div>
         </div>
