@@ -22,7 +22,7 @@ import { useKeys } from './hooks/useKeys';
 import { useToasts } from './hooks/useToasts';
 import { useLockStatus } from './hooks/useLockStatus';
 import { useFolders } from './hooks/useFolders';
-import { openFile, deleteKey, openDownloadFolder } from './services/api';
+import { openFile, deleteKey } from './services/api';
 import { getFileCategory } from './utils/fileIcons';
 import { getSectionTitle, getSubFolders, computeFolderSizes } from './utils/folders';
 import type { FileCategory } from './utils/fileIcons';
@@ -285,21 +285,14 @@ function App() {
           onMobileClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 overflow-y-auto bg-white">
-          <div className="px-6 pt-5 pb-2 flex items-center gap-2">
+          <div className="px-6 pt-5 pb-2 flex items-center gap-4">
             <h2 className="text-lg font-medium text-gray-800">
               {getSectionTitle(activeSection)}
             </h2>
             {isDownloaded && (
-              <button
-                onClick={() => openDownloadFolder()}
-                className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
-                title="Open folder"
-                aria-label="Open download folder"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-              </button>
+              <span className="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-0.5 rounded">
+                {settings.downloadPath || './download'}
+              </span>
             )}
             {error && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
