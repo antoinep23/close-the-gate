@@ -20,10 +20,11 @@ interface FileRowProps {
   onPreviewClick?: (fileName: string, keyName: string) => void;
   onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
+  onSelect?: () => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onSelect, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
   const {
