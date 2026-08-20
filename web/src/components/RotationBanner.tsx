@@ -30,7 +30,7 @@ export function RotationBanner({ onRotateComplete, onError }: RotationBannerProp
 
   const checkRotation = useCallback(async () => {
     try {
-      const res = await fetch('/api/files/rotation-check', { cache: 'no-store' });
+      const res = await fetch('/api/files/rotation-check');
       if (!res.ok) return;
       const data: RotationCheckResponse = await res.json();
 

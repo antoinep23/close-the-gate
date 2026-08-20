@@ -28,14 +28,6 @@ const port = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Disable caching for all API responses to ensure fresh data
-app.use('/api', (_req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  next();
-});
-
 // --- Settings endpoints ---
 
 app.get('/api/settings', (_req, res) => {
@@ -888,10 +880,6 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-const server = app.listen(port, () => {
+app.listen(port, () => {
   console.log(`API server running on http://localhost:${port}`);
 });
-
-// Ensure connections stay alive long enough for SSE and long operations
-server.keepAliveTimeout = 120_000;
-server.headersTimeout = 125_000;

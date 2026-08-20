@@ -6,7 +6,7 @@ export function useKeys() {
 
   const fetchKeys = useCallback(async () => {
     try {
-      const res = await fetch('/api/keys', { cache: 'no-store' });
+      const res = await fetch('/api/keys');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: string[] = await res.json();
       setKeys(data);
