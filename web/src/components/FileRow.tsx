@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
@@ -24,6 +25,7 @@ interface FileRowProps {
 
 export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
+  const dragGhostRef = useRef<HTMLDivElement | null>(null);
   const {
     downloading, deleting, confirmOpen, setConfirmOpen, unlockOpen, setUnlockOpen,
     starred, isProtected, isLocalDelete,
@@ -33,6 +35,39 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
     onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError,
     onProtectionChange,
   });
+
+  function handleDragStart(e: React.DragEvent<HTMLTableRowElement>) {
+    e.dataTransfer.setData('text/plain', file.fileName);
+    e.dataTransfer.effectAllowed = 'move';
+
+    // Create custom drag image: icon + file name
+    const ghost = document.createElement('div');
+    ghost.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);font-size:13px;color:#1f2937;white-space:nowrap;position:fixed;top:-1000px;left:-1000px;z-index:9999;pointer-events:none;';
+
+    // Clone the icon from the first cell
+    const iconEl = (e.currentTarget.querySelector('td .flex svg') as HTMLElement)?.cloneNode(true) as HTMLElement;
+    if (iconEl) {
+      iconEl.style.width = '16px';
+      iconEl.style.height = '16px';
+      iconEl.style.flexShrink = '0';
+      ghost.appendChild(iconEl);
+    }
+
+    const label = document.createElement('span');
+    label.textContent = file.fileName;
+    ghost.appendChild(label);
+
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+    dragGhostRef.current = ghost;
+  }
+
+  function handleDragEnd() {
+    if (dragGhostRef.current) {
+      document.body.removeChild(dragGhostRef.current);
+      dragGhostRef.current = null;
+    }
+  }
 
   function handleClick() {
     if (onFileOpen && !confirmOpen && !deleting) {
@@ -52,7 +87,8 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         draggable
-        onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
         className="group border-b border-gray-300 hover:bg-gray-100 transition-colors active:bg-blue-100"
       >
         <td className="py-3 px-2">

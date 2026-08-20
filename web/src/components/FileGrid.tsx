@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { AiFillFolder, AiOutlineDelete, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { formatSize } from '../utils/format';
@@ -59,6 +59,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const folderDragGhostRef = useRef<HTMLDivElement | null>(null);
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -140,7 +141,21 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   key={`folder-${folder}`}
                   onDoubleClick={() => onFolderClick?.(folder)}
                   draggable
-                  onDragStart={(e) => { e.dataTransfer.setData('application/x-folder', folder); e.dataTransfer.effectAllowed = 'move'; }}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/x-folder', folder);
+                    e.dataTransfer.effectAllowed = 'move';
+                    const ghost = document.createElement('div');
+                    ghost.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);font-size:13px;color:#1f2937;white-space:nowrap;position:fixed;top:-1000px;left:-1000px;z-index:9999;pointer-events:none;';
+                    const iconEl = (e.currentTarget.querySelector('td .flex svg') as HTMLElement)?.cloneNode(true) as HTMLElement;
+                    if (iconEl) { iconEl.style.width = '16px'; iconEl.style.height = '16px'; iconEl.style.flexShrink = '0'; ghost.appendChild(iconEl); }
+                    const label = document.createElement('span');
+                    label.textContent = name;
+                    ghost.appendChild(label);
+                    document.body.appendChild(ghost);
+                    e.dataTransfer.setDragImage(ghost, 0, 0);
+                    folderDragGhostRef.current = ghost;
+                  }}
+                  onDragEnd={() => { if (folderDragGhostRef.current) { document.body.removeChild(folderDragGhostRef.current); folderDragGhostRef.current = null; } }}
                   onDragOver={(e) => { e.preventDefault(); setDragOverFolder(folder); }}
                   onDragLeave={() => setDragOverFolder(null)}
                   onDrop={(e) => {
