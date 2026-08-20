@@ -19,10 +19,11 @@ interface FileCardProps {
   onPreviewClick?: (fileName: string, keyName: string) => void;
   onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
+  onSelect?: () => void;
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, hideDownload }: FileCardProps) {
+export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onSelect, hideDownload }: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const {
     downloading, deleting, confirmOpen, setConfirmOpen, unlockOpen, setUnlockOpen,
