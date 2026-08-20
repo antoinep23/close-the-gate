@@ -138,7 +138,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
               return (
                 <tr
                   key={`folder-${folder}`}
-                  onClick={() => onFolderClick?.(folder)}
+                  onDoubleClick={() => onFolderClick?.(folder)}
                   draggable
                   onDragStart={(e) => { e.dataTransfer.setData('application/x-folder', folder); e.dataTransfer.effectAllowed = 'move'; }}
                   onDragOver={(e) => { e.preventDefault(); setDragOverFolder(folder); }}
@@ -154,7 +154,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                       if (fileName && onFileDrop) onFileDrop(fileName, folder);
                     }
                   }}
-                  className={`group border-b border-gray-300 transition-colors ${
+                  className={`group border-b border-gray-300 transition-colors active:bg-blue-100 ${
                     dragOverFolder === folder
                       ? 'bg-blue-50 ring-1 ring-blue-200 ring-inset'
                       : 'hover:bg-gray-100'
@@ -229,7 +229,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
           return (
             <div
               key={`folder-${folder}`}
-              onClick={() => onFolderClick?.(folder)}
+              onDoubleClick={() => onFolderClick?.(folder)}
               draggable
               onDragStart={(e) => { e.dataTransfer.setData('application/x-folder', folder); e.dataTransfer.effectAllowed = 'move'; }}
               onDragOver={(e) => { e.preventDefault(); setDragOverFolder(folder); }}
@@ -245,7 +245,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   if (fileName && onFileDrop) onFileDrop(fileName, folder);
                 }
               }}
-              className={`group relative rounded-xl p-4 transition-all flex flex-col h-full ${
+              className={`group relative rounded-xl p-4 transition-all flex flex-col h-full active:bg-blue-100 ${
                 dragOverFolder === folder
                   ? 'bg-blue-50 ring-1 ring-blue-200'
                   : 'bg-gray-50 hover:bg-gray-100'

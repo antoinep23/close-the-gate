@@ -53,7 +53,7 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         onDoubleClick={handleDoubleClick}
         draggable
         onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
-        className="group border-b border-gray-300 hover:bg-gray-100 transition-colors"
+        className="group border-b border-gray-300 hover:bg-gray-100 transition-colors active:bg-blue-100"
       >
         <td className="py-3 px-2">
           <div className="flex items-center gap-3">
