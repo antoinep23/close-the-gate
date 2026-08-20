@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { AiOutlineFolder, AiOutlineDelete, AiOutlineFolderOpen } from 'react-icons/ai';
+import { AiFillFolder, AiOutlineDelete, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { formatSize } from '../utils/format';
 import { FileCard } from './FileCard';
@@ -36,16 +36,16 @@ interface FileGridProps {
 function SortArrow({ field, activeField, direction }: { field: SortField; activeField: SortField | null; direction: SortDirection }) {
   const isActive = field === activeField;
   return (
-    <span className="inline-flex flex-col ml-2 -space-y-0.5">
+    <span className="inline-flex flex-col ml-1.5 -space-y-0.5">
       <svg
-        className={`w-2.5 h-2.5 ${isActive && direction === 'desc' ? 'text-gray-500' : 'text-gray-300'}`}
+        className={`w-2 h-2 ${isActive && direction === 'asc' ? 'text-gray-700' : 'text-gray-300'}`}
         viewBox="0 0 10 6"
         fill="currentColor"
       >
         <path d="M5 0L10 6H0L5 0Z" />
       </svg>
       <svg
-        className={`w-2.5 h-2.5 ${isActive && direction === 'asc' ? 'text-gray-500' : 'text-gray-300'}`}
+        className={`w-2 h-2 ${isActive && direction === 'desc' ? 'text-gray-700' : 'text-gray-300'}`}
         viewBox="0 0 10 6"
         fill="currentColor"
       >
@@ -62,7 +62,6 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
 
   function handleSort(field: SortField) {
     if (sortField === field) {
-      // Toggle direction
       setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'));
     } else {
       setSortField(field);
@@ -72,14 +71,10 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
 
   const sortedFiles = useMemo(() => {
     if (!sortField) return files;
-
     return [...files].sort((a, b) => {
       let cmp = 0;
-      if (sortField === 'size') {
-        cmp = a.size - b.size;
-      } else if (sortField === 'uploadDate') {
-        cmp = new Date(a.uploadDate).getTime() - new Date(b.uploadDate).getTime();
-      }
+      if (sortField === 'size') cmp = a.size - b.size;
+      else if (sortField === 'uploadDate') cmp = new Date(a.uploadDate).getTime() - new Date(b.uploadDate).getTime();
       return sortDirection === 'asc' ? cmp : -cmp;
     });
   }, [files, sortField, sortDirection]);
@@ -87,7 +82,6 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
   const sortedSubFolders = useMemo(() => {
     if (!subFolders) return undefined;
     if (sortField !== 'size' || !folderSizes) return subFolders;
-
     return [...subFolders].sort((a, b) => {
       const cmp = (folderSizes[a] || 0) - (folderSizes[b] || 0);
       return sortDirection === 'asc' ? cmp : -cmp;
@@ -99,42 +93,43 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
   if (files.length === 0 && !hasSubFolders) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
-        <p>No files found</p>
+        <p className="text-sm">No files here</p>
       </div>
     );
   }
 
   if (viewMode === 'list') {
     return (
-      <div className="p-6">
+      <div className="px-6 pt-2">
         <table className="w-full">
           <thead>
-            <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
-              <th className="pb-2 font-medium">Name</th>
+            <tr className="text-left text-[13px] text-gray-500 border-b border-gray-300">
+              <th className="pb-3 font-medium">Name</th>
               <th
-                className="pb-2 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors hidden md:table-cell"
+                className="pb-3 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('uploadDate')}
               >
                 <span className="inline-flex items-center">
-                  {hideDownload ? 'Download date' : 'Upload date'}
+                  {hideDownload ? 'Downloaded' : 'Date modified'}
                   <SortArrow field="uploadDate" activeField={sortField} direction={sortDirection} />
                 </span>
               </th>
               <th
-                className="pb-2 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors hidden md:table-cell"
+                className="pb-3 font-medium cursor-pointer select-none hover:text-gray-700 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('size')}
               >
                 <span className="inline-flex items-center">
-                  Size
+                  File size
                   <SortArrow field="size" activeField={sortField} direction={sortDirection} />
                 </span>
               </th>
-              {onPreviewClick && <th className="pb-2 font-medium w-10"></th>}
-              {!hideDownload && <th className="pb-2 font-medium w-10"></th>}
-              {onRotateClick && <th className="pb-2 font-medium w-10"></th>}
-              {onMoveClick && <th className="pb-2 font-medium w-10"></th>}
-              <th className="pb-2 font-medium w-10"></th>
-              <th className="pb-2 font-medium w-10"></th>
+              {onPreviewClick && <th className="pb-3 font-medium w-10"></th>}
+              {!hideDownload && <th className="pb-3 font-medium w-10"></th>}
+              {onRotateClick && <th className="pb-3 font-medium w-10"></th>}
+              <th className="pb-3 font-medium w-10"></th>
+              <th className="pb-3 font-medium w-10"></th>
+              {onMoveClick && <th className="pb-3 font-medium w-10"></th>}
+              <th className="pb-3 font-medium w-10"></th>
             </tr>
           </thead>
           <tbody>
@@ -159,38 +154,36 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                       if (fileName && onFileDrop) onFileDrop(fileName, folder);
                     }
                   }}
-                  className={`group border-b border-blue-50 cursor-pointer transition-colors ${
+                  className={`group border-b border-gray-300 cursor-pointer transition-colors ${
                     dragOverFolder === folder
-                      ? 'bg-blue-100/60 ring-2 ring-blue-300 ring-inset'
-                      : 'bg-blue-50/20 hover:bg-blue-50/60'
+                      ? 'bg-blue-50 ring-1 ring-blue-200 ring-inset'
+                      : 'hover:bg-gray-50'
                   }`}
                 >
-                  <td className="py-3">
+                  <td className="py-3 px-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center ml-1">
-                        <AiOutlineFolder className="w-4.5 h-4.5 text-blue-500" />
-                      </div>
+                      <AiFillFolder className="w-6 h-6 text-[#5f6368] flex-shrink-0" />
                       <span className="text-sm text-gray-800 font-medium">{name}</span>
                     </div>
                   </td>
-                  <td className="py-3 text-sm text-gray-300 hidden md:table-cell">—</td>
-                  <td className="py-3 text-sm text-gray-400 hidden md:table-cell">{folderSizes?.[folder] ? formatSize(folderSizes[folder]) : '—'}</td>
+                  <td className="py-3 text-[13px] text-gray-500 hidden md:table-cell">—</td>
+                  <td className="py-3 text-[13px] text-gray-500 hidden md:table-cell">{folderSizes?.[folder] ? formatSize(folderSizes[folder]) : '—'}</td>
                   {onPreviewClick && <td className="py-3"></td>}
                   {!hideDownload && <td className="py-3"></td>}
                   {onRotateClick && <td className="py-3"></td>}
-                  {onMoveClick && (
-                    <td className="py-3"></td>
-                  )}
                   <td className="py-3"></td>
-                  <td className="py-3">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onMoveFolderClick?.(folder); }}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
-                      title="Move folder"
-                    >
-                      <AiOutlineFolderOpen className="w-4 h-4 text-gray-500" />
-                    </button>
-                  </td>
+                  <td className="py-3"></td>
+                  {onMoveClick && (
+                    <td className="py-3">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onMoveFolderClick?.(folder); }}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+                        title="Move folder"
+                      >
+                        <AiOutlineFolderOpen className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </td>
+                  )}
                   <td className="py-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
@@ -231,7 +224,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
   return (
     <div className="p-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 auto-rows-fr">
-        {hasSubFolders && subFolders?.map((folder) => {
+        {hasSubFolders && sortedSubFolders.map((folder) => {
           const name = folder.split('/').pop() || folder;
           return (
             <div
@@ -252,16 +245,14 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   if (fileName && onFileDrop) onFileDrop(fileName, folder);
                 }
               }}
-              className={`group relative border rounded-xl p-4 cursor-pointer transition-all flex flex-col h-full ${
+              className={`group relative rounded-xl p-4 cursor-pointer transition-all flex flex-col h-full ${
                 dragOverFolder === folder
-                  ? 'border-blue-400 bg-blue-100/60 ring-2 ring-blue-300 shadow-md'
-                  : 'border-blue-100 bg-gradient-to-br from-blue-50/60 to-white hover:border-blue-300 hover:shadow-sm'
+                  ? 'bg-blue-50 ring-1 ring-blue-200'
+                  : 'bg-gray-50 hover:bg-gray-100'
               }`}
             >
-              <div className="flex flex-col items-center justify-center gap-2 flex-1 py-5 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <AiOutlineFolder className="w-6 h-6 text-blue-500" />
-                </div>
+              <div className="flex flex-col items-center justify-center gap-2 flex-1 py-4">
+                <AiFillFolder className="w-10 h-10 text-[#5f6368]" />
                 <span className="text-sm text-gray-800 font-medium truncate max-w-full px-1">{name}</span>
                 {folderSizes?.[folder] ? (
                   <span className="text-[11px] text-gray-400">{formatSize(folderSizes[folder])}</span>
@@ -277,10 +268,10 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDeleteFolder?.(folder); }}
-                  className="p-1 rounded-full hover:bg-red-50 cursor-pointer transition-colors"
+                  className="p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-colors"
                   title="Delete folder"
                 >
-                  <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
+                  <AiOutlineDelete className="w-3.5 h-3.5 text-gray-500" />
                 </button>
               </div>
             </div>

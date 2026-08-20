@@ -48,19 +48,19 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
         className="group border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
       >
-        <td className="py-2.5">
+        <td className="py-3 px-2">
           <div className="flex items-center gap-3">
             <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />
             <span className="text-sm text-gray-800">{file.fileName}</span>
           </div>
         </td>
-        <td className="py-2.5 text-sm text-gray-500 hidden md:table-cell">{formatDate(file.uploadDate)}</td>
-        <td className="py-2.5 text-sm text-gray-500 hidden md:table-cell">{formatSize(file.size)}</td>
+        <td className="py-3 text-[13px] text-gray-500 hidden md:table-cell">{formatDate(file.uploadDate)}</td>
+        <td className="py-3 text-[13px] text-gray-500 hidden md:table-cell">{formatSize(file.size)}</td>
         {onPreviewClick && (
-          <td className="py-2.5">
+          <td className="py-3">
             <button
               onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
               aria-label={`Preview ${file.fileName}`}
               title="Preview"
             >
@@ -69,11 +69,11 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           </td>
         )}
         {!hideDownload && (
-          <td className="py-2.5">
+          <td className="py-3">
             <button
               onClick={handleDownload}
               disabled={downloading}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
               aria-label={`Download ${file.fileName}`}
               title="Download"
             >
@@ -86,10 +86,10 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           </td>
         )}
         {onRotateClick && (
-          <td className="py-2.5">
+          <td className="py-3">
             <button
               onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
               aria-label={`Rotate key for ${file.fileName}`}
               title="Rotate key"
             >
@@ -97,20 +97,8 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             </button>
           </td>
         )}
-        {onMoveClick && (
-          <td className="py-2.5">
-            <button
-              onClick={(e) => { e.stopPropagation(); onMoveClick(file.fileName, file.folder || '/'); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
-              aria-label={`Move ${file.fileName}`}
-              title="Move to folder"
-            >
-              <AiOutlineFolderOpen className="w-4 h-4 text-gray-500" />
-            </button>
-          </td>
-        )}
         {!isLocalDelete && (
-          <td className="py-2.5">
+          <td className="py-3">
             <button
               onClick={handleStar}
               className={`p-1 rounded-full cursor-pointer transition-all ${
@@ -124,13 +112,13 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
           </td>
         )}
         {!isLocalDelete && (
-          <td className="py-2.5">
+          <td className="py-3">
             <button
               onClick={handleLock}
               className={`p-1 rounded-full cursor-pointer transition-all ${
                 isProtected
-                  ? 'text-amber-500 hover:bg-gray-200'
-                  : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-200'
+                  ? 'text-amber-500 hover:bg-gray-100'
+                  : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:bg-gray-100'
               }`}
               aria-label={isProtected ? 'Unlock deletion' : 'Lock deletion'}
               title={isProtected ? 'Remove deletion protection' : 'Protect from deletion'}
@@ -139,7 +127,19 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
             </button>
           </td>
         )}
-        <td className="py-2.5">
+        {onMoveClick && (
+          <td className="py-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveClick(file.fileName, file.folder || '/'); }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-100 cursor-pointer transition-all"
+              aria-label={`Move ${file.fileName}`}
+              title="Move to folder"
+            >
+              <AiOutlineFolderOpen className="w-4 h-4 text-gray-500" />
+            </button>
+          </td>
+        )}
+        <td className="py-3">
           {!isProtected ? (
             <button
               onClick={handleDelete}
