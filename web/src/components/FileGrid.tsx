@@ -127,8 +127,8 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
               {onPreviewClick && <th className="pb-3 font-medium w-10"></th>}
               {!hideDownload && <th className="pb-3 font-medium w-10"></th>}
               {onRotateClick && <th className="pb-3 font-medium w-10"></th>}
-              <th className="pb-3 font-medium w-10"></th>
-              <th className="pb-3 font-medium w-10"></th>
+              {!hideDownload && <th className="pb-3 font-medium w-10"></th>}
+              {!hideDownload && <th className="pb-3 font-medium w-10"></th>}
               {onMoveClick && <th className="pb-3 font-medium w-10"></th>}
               <th className="pb-3 font-medium w-10"></th>
             </tr>
@@ -186,8 +186,8 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   {onPreviewClick && <td className="py-3"></td>}
                   {!hideDownload && <td className="py-3"></td>}
                   {onRotateClick && <td className="py-3"></td>}
-                  <td className="py-3"></td>
-                  <td className="py-3"></td>
+                  {!hideDownload && <td className="py-3"></td>}
+                  {!hideDownload && <td className="py-3"></td>}
                   {onMoveClick && (
                     <td className="py-3">
                       <button
