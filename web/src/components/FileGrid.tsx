@@ -111,7 +111,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                 onClick={() => handleSort('uploadDate')}
               >
                 <span className="inline-flex items-center">
-                  {hideDownload ? 'Downloaded' : 'Date modified'}
+                  {hideDownload ? 'Downloaded' : 'Upload Date'}
                   <SortArrow field="uploadDate" activeField={sortField} direction={sortDirection} />
                 </span>
               </th>

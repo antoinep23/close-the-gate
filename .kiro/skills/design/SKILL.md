@@ -48,7 +48,7 @@ Clean, minimal, content-first. The UI should feel like a professional file manag
 ## List View (Primary)
 
 - Table header: 13px / font-medium / text-gray-500 (no uppercase)
-- Columns: Name (flex), Date modified, File size
+- Columns: Name (flex), Upload Date, File size
 - Row height: ~48px (py-3)
 - Row separator: `border-b border-gray-300`
 - Row hover: `bg-gray-50` (no ring, no shadow)
