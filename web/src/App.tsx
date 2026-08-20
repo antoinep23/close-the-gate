@@ -56,7 +56,7 @@ function App() {
   const { settings, saveSettings } = useSettings();
   const { keys, refetchKeys } = useKeys();
   const { lockStatus, handleLock, handleUnlockSuccess, handleHighSecurityToggle } = useLockStatus(refetchKeys, addToast, saveSettings);
-  const { folders, handleCreateFolder, handleDeleteFolder, handleFileDrop, handleFolderDrop } = useFolders(addToast, refetch);
+  const { folders, refetchFolders, handleCreateFolder, handleDeleteFolder, handleFileDrop, handleFolderDrop } = useFolders(addToast, refetch);
 
   // Fetch downloaded files
   const fetchDownloaded = useCallback(async () => {
@@ -431,7 +431,7 @@ function App() {
         sourceFolder={moveFolderSource || ''}
         folders={folders}
         onClose={() => setMoveFolderSource(null)}
-        onSuccess={(_, newPath) => { addToast('success', `Moved folder to ${newPath}`); refetch(); }}
+        onSuccess={(_, newPath) => { addToast('success', `Moved folder to ${newPath}`); refetchFolders(); refetch(); }}
         onError={(err) => addToast('error', err)}
       />
       <EmergencyRotationModal

@@ -58,109 +58,109 @@ export function Sidebar({ activeSection, onSectionChange, files, keys, region, o
       {mobileOpen && (
         <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={onMobileClose}></div>
       )}
-      <aside className={`bg-gray-50 border-r border-gray-200 h-full flex flex-col fixed md:static z-50 md:z-auto w-64 md:w-56 transition-transform duration-200 ${
+      <aside className={`bg-[#f8f9fa] border-r border-gray-200 h-full flex flex-col fixed md:static z-50 md:z-auto w-64 md:w-56 transition-transform duration-200 ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
-      <div className="p-4">
-        <button onClick={onUploadClick} className="flex items-center cursor-pointer gap-2 bg-white border border-gray-300 rounded-2xl px-5 py-3 shadow-sm hover:shadow-md transition-shadow w-full">
-          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span className="font-medium text-gray-700 text-sm">Upload</span>
-        </button>
-      </div>
-
-      <nav className="flex-1 px-3 overflow-y-auto">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleSectionChange(item.id)}
-              className={`flex items-center gap-3 w-full px-4 py-2 rounded-full text-sm mb-1 cursor-pointer transition-colors ${
-                isActive
-                  ? 'bg-blue-100 text-blue-800 font-medium'
-                  : 'text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-
-        <div className="mt-4 mb-2 px-4">
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Categories</span>
+        <div className="p-4">
+          <button onClick={onUploadClick} className="flex items-center cursor-pointer gap-2 bg-white border border-gray-200 rounded-2xl px-5 py-3 shadow-sm hover:shadow-md transition-shadow w-full">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="#1a73e8" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <span className="font-medium text-gray-700 text-sm">New</span>
+          </button>
         </div>
 
-        {categoryItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === `category-${item.id}`;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleSectionChange(`category-${item.id}`)}
-              className={`flex items-center gap-3 w-full px-4 py-2 rounded-full text-sm mb-1 cursor-pointer transition-colors ${
-                isActive
-                  ? 'bg-blue-100 text-blue-800 font-medium'
-                  : 'text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-
-        <div className="mt-4 mb-2 px-4 flex items-center justify-between">
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Keys</span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={onBackupClick}
-              className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
-              title="Backup / Restore keys"
-            >
-              <AiOutlineSave className="w-3.5 h-3.5 text-gray-400" />
-            </button>
-            <button
-              onClick={onGenerateKey}
-              className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
-              title="Generate new key"
-            >
-              <AiOutlinePlus className="w-3.5 h-3.5 text-gray-400" />
-            </button>
-          </div>
-        </div>
-
-        {keys.length === 0 ? (
-          <p className="px-4 text-xs text-gray-400 italic">No keys found</p>
-        ) : (
-          keys.map((keyName) => (
-            <div
-              key={keyName}
-              className="group flex items-center gap-2 px-4 py-1.5 text-sm text-gray-600 truncate"
-              title={keyName}
-            >
-              <AiOutlineKey className="w-4 h-4 flex-shrink-0 text-amber-500" />
-              <span className="truncate flex-1">{keyName}</span>
+        <nav className="flex-1 px-3 overflow-y-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
               <button
-                onClick={() => onDeleteKey(keyName)}
-                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 cursor-pointer transition-all"
-                title="Delete key"
+                key={item.id}
+                onClick={() => handleSectionChange(item.id)}
+                className={`flex items-center gap-3 w-full px-4 py-2 rounded-full text-sm mb-0.5 cursor-pointer transition-colors ${
+                  isActive
+                    ? 'bg-[#c2e7ff] text-[#001d35] font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/60'
+                }`}
               >
-                <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+
+          <div className="mt-5 mb-2 px-4">
+            <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Categories</span>
+          </div>
+
+          {categoryItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === `category-${item.id}`;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleSectionChange(`category-${item.id}`)}
+                className={`flex items-center gap-3 w-full px-4 py-2 rounded-full text-sm mb-0.5 cursor-pointer transition-colors ${
+                  isActive
+                    ? 'bg-[#c2e7ff] text-[#001d35] font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/60'
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+
+          <div className="mt-5 mb-2 px-4 flex items-center justify-between">
+            <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Keys</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={onBackupClick}
+                className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
+                title="Backup / Restore keys"
+              >
+                <AiOutlineSave className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+              <button
+                onClick={onGenerateKey}
+                className="p-0.5 rounded hover:bg-gray-200 cursor-pointer transition-colors"
+                title="Generate new key"
+              >
+                <AiOutlinePlus className="w-3.5 h-3.5 text-gray-400" />
               </button>
             </div>
-          ))
-        )}
-      </nav>
+          </div>
 
-      <div className="p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500 text-center">Total Storage: {totalStorageSize}</div>
-        <div className="text-xs text-gray-400 text-center mt-1">Est. cost: {monthlyCost}/mo</div>
-      </div>
-    </aside>
+          {keys.length === 0 ? (
+            <p className="px-4 text-xs text-gray-400 italic">No keys found</p>
+          ) : (
+            keys.map((keyName) => (
+              <div
+                key={keyName}
+                className="group flex items-center gap-2 px-4 py-1.5 text-sm text-gray-600 truncate"
+                title={keyName}
+              >
+                <AiOutlineKey className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                <span className="truncate flex-1 text-[13px]">{keyName}</span>
+                <button
+                  onClick={() => onDeleteKey(keyName)}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 cursor-pointer transition-all"
+                  title="Delete key"
+                >
+                  <AiOutlineDelete className="w-3.5 h-3.5 text-red-600" />
+                </button>
+              </div>
+            ))
+          )}
+        </nav>
+
+        <div className="p-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 text-center">{totalStorageSize} used</div>
+          <div className="text-xs text-gray-400 text-center mt-0.5">Est. {monthlyCost}/mo</div>
+        </div>
+      </aside>
     </>
   );
 }

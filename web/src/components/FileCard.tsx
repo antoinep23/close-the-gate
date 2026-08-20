@@ -35,17 +35,26 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
   });
 
   function handleClick() {
-    if (onFileOpen && !confirmOpen && !deleting) {
-      onFileOpen(file.fileName);
+    onSelect?.();
+  }
+
+  function handleDoubleClick() {
+    if (!confirmOpen && !deleting) {
+      if (onPreviewClick) {
+        onPreviewClick(file.fileName, file.keyName);
+      } else if (onFileOpen) {
+        onFileOpen(file.fileName);
+      }
     }
   }
 
   return (
     <div
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       draggable
       onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
-      className="group relative border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm cursor-pointer transition-all flex flex-col h-full"
+      className="group relative border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all flex flex-col h-full active:bg-blue-100"
     >
       {/* Persistent badges */}
       <div className="absolute top-2 right-2 flex items-center gap-0.5">
@@ -55,13 +64,11 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
 
       {/* File icon */}
       <div className="flex items-center justify-center py-5">
-        <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-          <Icon className={`w-6 h-6 ${color}`} />
-        </div>
+        <Icon className={`w-8 h-8 ${color}`} />
       </div>
 
       {/* File name */}
-      <p className="text-sm text-gray-800 font-medium text-center truncate w-full px-1" title={file.fileName}>
+      <p className="text-sm text-gray-800 text-center truncate w-full px-1" title={file.fileName}>
         {file.fileName}
       </p>
 
@@ -72,14 +79,14 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       </div>
 
       {/* Hover action bar */}
-      <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm border-t border-gray-100 rounded-b-xl px-2 py-1.5 flex items-center justify-center gap-1">
+      <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 border-t border-gray-100 rounded-b-xl px-2 py-1.5 flex items-center justify-center gap-0.5">
         {onPreviewClick && (
           <button
             onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title="Preview"
           >
-            <AiOutlineEye className="w-3.5 h-3.5 text-gray-600" />
+            <AiOutlineEye className="w-3.5 h-3.5 text-gray-500" />
           </button>
         )}
         {!hideDownload && (
@@ -90,9 +97,9 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             title="Download"
           >
             {downloading ? (
-              <AiOutlineLoading3Quarters className="w-3.5 h-3.5 text-gray-600 animate-spin" />
+              <AiOutlineLoading3Quarters className="w-3.5 h-3.5 text-gray-500 animate-spin" />
             ) : (
-              <AiOutlineDownload className="w-3.5 h-3.5 text-gray-600" />
+              <AiOutlineDownload className="w-3.5 h-3.5 text-gray-500" />
             )}
           </button>
         )}
@@ -102,7 +109,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title="Rotate key"
           >
-            <AiOutlineSync className="w-3.5 h-3.5 text-gray-600" />
+            <AiOutlineSync className="w-3.5 h-3.5 text-gray-500" />
           </button>
         )}
         {onMoveClick && (
@@ -111,7 +118,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title="Move to folder"
           >
-            <AiOutlineFolderOpen className="w-3.5 h-3.5 text-gray-600" />
+            <AiOutlineFolderOpen className="w-3.5 h-3.5 text-gray-500" />
           </button>
         )}
         {!isLocalDelete && (
@@ -120,7 +127,7 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             className="p-1.5 rounded-md cursor-pointer transition-colors group/star"
             title={starred ? 'Unstar' : 'Star'}
           >
-            {starred ? <AiFillStar className="w-3.5 h-3.5 text-yellow-400" /> : <AiOutlineStar className="w-3.5 h-3.5 text-gray-600 group-hover/star:text-yellow-400" />}
+            {starred ? <AiFillStar className="w-3.5 h-3.5 text-yellow-400" /> : <AiOutlineStar className="w-3.5 h-3.5 text-gray-500 group-hover/star:text-yellow-400" />}
           </button>
         )}
         {!isLocalDelete && (
@@ -129,20 +136,20 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title={isProtected ? 'Remove protection' : 'Protect'}
           >
-            {isProtected ? <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" /> : <AiOutlineUnlock className="w-3.5 h-3.5 text-gray-600" />}
+            {isProtected ? <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" /> : <AiOutlineUnlock className="w-3.5 h-3.5 text-gray-500" />}
           </button>
         )}
         {!isProtected ? (
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="p-1.5 rounded-md hover:bg-red-50 cursor-pointer transition-colors"
+            className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title={isLocalDelete ? 'Remove from local' : 'Delete'}
           >
             {deleting ? (
-              <AiOutlineLoading3Quarters className="w-3.5 h-3.5 text-red-500 animate-spin" />
+              <AiOutlineLoading3Quarters className="w-3.5 h-3.5 text-gray-500 animate-spin" />
             ) : (
-              <AiOutlineDelete className="w-3.5 h-3.5 text-red-500" />
+              <AiOutlineDelete className="w-3.5 h-3.5 text-gray-500" />
             )}
           </button>
         ) : (

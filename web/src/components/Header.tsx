@@ -16,42 +16,42 @@ interface HeaderProps {
 
 export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange, onSettingsOpen, onEmergencyRotation, onMenuToggle, highSecurity, unlocked, onLock }: HeaderProps) {
   return (
-    <header className="h-14 md:h-16 border-b border-gray-200 flex items-center px-3 md:px-4 gap-2 md:gap-4 bg-white">
-      {/* Short screen menu button */}
+    <header className="h-16 border-b border-gray-200 flex items-center px-4 gap-3 bg-white">
+      {/* Short screen menu */}
       <button
         onClick={onMenuToggle}
-        className="p-2 rounded-full text-gray-500 hover:bg-gray-100 cursor-pointer transition-colors md:hidden"
+        className="p-2 rounded-full text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors md:hidden"
         aria-label="Toggle menu"
       >
         <AiOutlineMenu className="w-5 h-5" />
       </button>
 
-      <div className="hidden md:flex items-center gap-2">
-        <img src="/logo.png" alt="CTG" className="w-7 h-7" />
-        <h1 className="text-lg font-medium text-gray-800">Close the Gate Drive</h1>
+      <div className="hidden md:flex items-center gap-2 shrink-0">
+        <img src="/logo.png" alt="CTG" className="w-8 h-8" />
+        <h1 className="text-[22px] font-medium text-gray-900">Drive</h1>
       </div>
 
-      {/* Short screen logo only */}
-      <img src="/logo.png" alt="CTG" className="w-6 h-6 md:hidden" />
+      {/* Short screen logo */}
+      <img src="/logo.png" alt="CTG" className="w-7 h-7 md:hidden shrink-0" />
 
       <div className="flex-1 max-w-2xl mx-auto">
         <div className="relative">
-          <AiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+          <AiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search in Drive"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full bg-gray-100 rounded-full py-2 md:py-2.5 pl-9 md:pl-10 pr-3 md:pr-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all"
+            className="w-full bg-[#edf2fc] rounded-full py-2.5 pl-11 pr-4 text-sm text-gray-800 outline-none focus:bg-white focus:shadow-md focus:ring-1 focus:ring-gray-200 transition-all placeholder-gray-500"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-0.5 md:gap-1">
+      <div className="flex items-center gap-0.5 shrink-0">
         <button
           onClick={() => onViewModeChange('list')}
-          className={`hidden sm:block p-2 rounded-full transition-colors cursor-pointer ${
-            viewMode === 'list' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'
+          className={`hidden sm:flex p-2 rounded-full transition-colors cursor-pointer ${
+            viewMode === 'list' ? 'bg-[#c2e7ff] text-[#001d35]' : 'text-gray-600 hover:bg-gray-100'
           }`}
           aria-label="List view"
         >
@@ -60,8 +60,8 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
 
         <button
           onClick={() => onViewModeChange('grid')}
-          className={`hidden sm:block p-2 rounded-full transition-colors cursor-pointer ${
-            viewMode === 'grid' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'
+          className={`hidden sm:flex p-2 rounded-full transition-colors cursor-pointer ${
+            viewMode === 'grid' ? 'bg-[#c2e7ff] text-[#001d35]' : 'text-gray-600 hover:bg-gray-100'
           }`}
           aria-label="Grid view"
         >
@@ -88,7 +88,7 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
 
         <button
           onClick={onEmergencyRotation}
-          className="hidden sm:block p-2 rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 cursor-pointer transition-colors"
+          className="hidden sm:flex p-2 rounded-full text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors"
           aria-label="Emergency key rotation"
           title="Rotate all keys (emergency)"
         >
@@ -97,7 +97,7 @@ export function Header({ viewMode, onViewModeChange, searchQuery, onSearchChange
 
         <button
           onClick={onSettingsOpen}
-          className="p-2 rounded-full text-gray-500 hover:bg-gray-100 cursor-pointer transition-colors"
+          className="p-2 rounded-full text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors"
           aria-label="Settings"
         >
           <AiOutlineSetting className="w-5 h-5" />
