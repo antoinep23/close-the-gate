@@ -21,7 +21,7 @@ export function useSettings() {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await fetch('/api/settings');
+        const res = await fetch('/api/settings', { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: PathSettings = await res.json();
         setSettings(data);

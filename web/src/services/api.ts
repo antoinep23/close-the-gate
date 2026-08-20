@@ -271,7 +271,7 @@ export async function restoreKeys(password: string, backupFileName: string): Pro
 }
 
 export async function listBackups(): Promise<{ fileName: string; createdAt: number; size: number }[]> {
-  const res = await fetch('/api/keys/backups');
+  const res = await fetch('/api/keys/backups', { cache: 'no-store' });
 
   if (!res.ok) return [];
 
@@ -334,7 +334,7 @@ export async function previewFile(fileName: string, keyName: string): Promise<{ 
 
 export async function getFolders(): Promise<string[]> {
   try {
-    const res = await fetch('/api/folders');
+    const res = await fetch('/api/folders', { cache: 'no-store' });
     if (!res.ok) return ['/'];
     return await res.json();
   } catch {

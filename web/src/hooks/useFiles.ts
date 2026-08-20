@@ -9,7 +9,7 @@ export function useFiles() {
   useEffect(() => {
     async function fetchFiles() {
       try {
-        const res = await fetch('/api/files');
+        const res = await fetch('/api/files', { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: FileItem[] = await res.json();
         setFiles(data);
@@ -34,7 +34,7 @@ export function useFiles() {
 
   const refetch = useCallback(async () => {
     try {
-      const res = await fetch('/api/files');
+      const res = await fetch('/api/files', { cache: 'no-store' });
       if (!res.ok) return;
       const data: FileItem[] = await res.json();
       setFiles(data);

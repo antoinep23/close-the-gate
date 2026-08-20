@@ -61,7 +61,7 @@ function App() {
   // Fetch downloaded files
   const fetchDownloaded = useCallback(async () => {
     try {
-      const res = await fetch('/api/downloaded');
+      const res = await fetch('/api/downloaded', { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
       setDownloadedFiles(

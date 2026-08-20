@@ -11,7 +11,7 @@ export function useLockStatus(refetchKeys: () => void, addToast: (type: 'success
 
   const fetchLockStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/lock-status');
+      const res = await fetch('/api/lock-status', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data.highSecurity && data.unlocked) {
@@ -72,7 +72,7 @@ export function useLockStatus(refetchKeys: () => void, addToast: (type: 'success
           addToast('error', data.error || 'Failed to disable high security');
         }
       }
-      const settingsRes = await fetch('/api/settings');
+      const settingsRes = await fetch('/api/settings', { cache: 'no-store' });
       if (settingsRes.ok) {
         const newSettings = await settingsRes.json();
         saveSettings(newSettings);
