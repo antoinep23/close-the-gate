@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Security Reminder for Key Files",
+      "trigger": "PreToolUse",
+      "description": "Remind to follow security rules when writing to key-related files",
+      "matcher": "fs_write|str_replace",
+      "action": {
+        "type": "agent",
+        "prompt": "If this write operation touches web/server/keyStore.ts, web/server/upload.ts, web/server/download.ts, or src/keys.ts: ensure that key material is never written to disk in high-security mode, buffers are zeroed before release, and retrieveKey() is used instead of direct key.retrieve() calls in route handlers."
+      }
+    }
+  ]
+}
