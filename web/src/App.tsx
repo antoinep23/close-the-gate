@@ -72,6 +72,7 @@ function App() {
           isStarred: false,
           isProtected: false,
           folder: '/',
+          lastOpenedAt: null,
           keyName: '',
         }))
       );
@@ -244,6 +245,12 @@ function App() {
 
     if (activeSection === 'starred') {
       filteredFiles = filteredFiles.filter((file) => file.isStarred);
+    }
+
+    if (activeSection === 'recent') {
+      filteredFiles = filteredFiles
+        .filter((file) => file.lastOpenedAt !== null)
+        .sort((a, b) => new Date(b.lastOpenedAt!).getTime() - new Date(a.lastOpenedAt!).getTime());
     }
 
     if (activeSection === 'my-drive') {

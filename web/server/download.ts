@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { Router } from 'express';
 import { fileURLToPath } from 'url';
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, GetItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
@@ -85,6 +85,17 @@ router.post('/preview', async (req, res) => {
 
     const file = new File();
     const buffer = await file.preview(fileName, key);
+
+    // Update lastOpenedAt in DynamoDB
+    try {
+      const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+      await dynamoClient.send(new UpdateItemCommand({
+        TableName: process.env.DYNAMO_TABLE!,
+        Key: { fileName: { S: fileName } },
+        UpdateExpression: 'SET lastOpenedAt = :ts',
+        ExpressionAttributeValues: { ':ts': { S: new Date().toISOString() } },
+      }));
+    } catch { /* non-blocking */ }
 
     // Determine content type from extension
     const contentType = getContentType(fileName);
