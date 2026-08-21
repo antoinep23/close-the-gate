@@ -14,25 +14,14 @@ The software is developped using TypeScript over Node.js.
 
 ## Features Summary
 
-- Local cryptographic key generation and secure local storage (mode 0600)
-- AES-256-GCM file encryption using random Initialization Vectors (IV)
-- HMAC SHA-256 file name hashing
-- Secure payload structure for S3 upload (IV + Ciphertext)
-- Multipart S3 upload with real-time progress tracking
-- DynamoDB integration for metadata tracking
-- Virtual folder structure (DynamoDB-based, S3 remains flat)
-- In-memory file preview (decrypted on the fly, never written to disk)
-- Fullscreen preview mode for images, PDFs, videos, audio, and text files
-- Key rotation (manual per-file, batch, or automatic)
-- Emergency key rotation for all files in one click
-- Auto key rotation with configurable interval and auto-generated keys
-- Password-protected key backup and restore (PBKDF2 + AES-256-GCM)
-- High security mode (keys encrypted at rest, decrypted in RAM only when unlocked)
-- Per-file deletion protection with confirmation safeguards
-- Inline rename for files and folders (click on the name to edit)
-- Drag and drop file/folder organization with custom drag preview
-- Right-click context menu (create folder, upload file)
-- Docker-ready with automatic capability detection
+- **AES-256-GCM encryption** with locally generated keys (mode 0600, never leave your machine)
+- **Zero-Knowledge storage** — S3 stores only ciphertext, file names are HMAC SHA-256 hashed
+- **In-memory file preview** — decrypt and view without writing to disk
+- **Key rotation** — per-file, batch, emergency, or automatic with configurable intervals
+- **High security mode** — keys encrypted at rest, decrypted in RAM only when unlocked
+- **Password-protected key backup and restore** (PBKDF2 + AES-256-GCM)
+- **Web UI, CLI, and TypeScript SDK** — Google Drive-style interface with drag & drop, inline rename, context menu
+- **Docker-ready** — deploy in one command
 
 ## Prerequisites
 
