@@ -843,9 +843,10 @@ app.patch('/api/files/:fileName/rename', async (req, res) => {
   }
 
   try {
-    // Get current file metadata
     const { GetItemCommand, PutItemCommand, DeleteItemCommand } = await import('@aws-sdk/client-dynamodb');
     const { marshall } = await import('@aws-sdk/util-dynamodb');
+    const { S3Client, CopyObjectCommand, DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+    const { createHmac } = await import('crypto');
 
     const getCmd = new GetItemCommand({
       TableName: tableName,
@@ -859,15 +860,49 @@ app.patch('/api/files/:fileName/rename', async (req, res) => {
     }
 
     const item = unmarshall(record.Item);
+    const keyName = item.keyName;
 
-    // Create new record with new name
+    // Retrieve the encryption key to compute S3 hashes
+    const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const projectRoot = path.resolve(configPath, '..');
+    const keysPath = path.isAbsolute(settings.keysPath)
+      ? settings.keysPath
+      : path.resolve(projectRoot, settings.keysPath);
+
+    const keyMaterial = retrieveKey(keyName, keysPath).material;
+
+    if (!keyMaterial) {
+      res.status(500).json({ error: 'Cannot retrieve key material for S3 rename' });
+      return;
+    }
+
+    // Compute old and new S3 keys (HMAC-SHA256 of fileName with key material)
+    const oldHash = createHmac('sha256', keyMaterial).update(fileName).digest('hex');
+    const newHash = createHmac('sha256', keyMaterial).update(newName).digest('hex');
+
+    // Copy S3 object to new key
+    const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
+    const bucket = process.env.S3_BUCKET!;
+
+    await s3Client.send(new CopyObjectCommand({
+      Bucket: bucket,
+      CopySource: `${bucket}/${oldHash}`,
+      Key: newHash,
+    }));
+
+    // Delete old S3 object
+    await s3Client.send(new DeleteObjectCommand({
+      Bucket: bucket,
+      Key: oldHash,
+    }));
+
+    // Update DynamoDB: create new record, delete old
     const newItem = { ...item, fileName: newName };
     await dynamoClient.send(new PutItemCommand({
       TableName: tableName,
       Item: marshall(newItem),
     }));
 
-    // Delete old record
     await dynamoClient.send(new DeleteItemCommand({
       TableName: tableName,
       Key: { fileName: { S: fileName } },
