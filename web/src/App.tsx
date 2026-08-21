@@ -16,6 +16,7 @@ import { PreviewModal } from './components/PreviewModal';
 import { MoveFileModal } from './components/MoveFileModal';
 import { MoveFolderModal } from './components/MoveFolderModal';
 import { EmergencyRotationModal } from './components/EmergencyRotationModal';
+import { CreateFolderModal } from './components/CreateFolderModal';
 import { useFiles } from './hooks/useFiles';
 import { useSettings } from './hooks/useSettings';
 import { useKeys } from './hooks/useKeys';
@@ -47,6 +48,7 @@ function App() {
   const [moveFile, setMoveFile] = useState<{ fileName: string; folder: string } | null>(null);
   const [emergencyRotationOpen, setEmergencyRotationOpen] = useState(false);
   const [moveFolderSource, setMoveFolderSource] = useState<string | null>(null);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
   // Downloaded files (local section)
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
@@ -356,6 +358,8 @@ function App() {
               onFileDrop={isMyDrive ? handleFileDrop : undefined}
               onFolderDrop={isMyDrive ? handleFolderDrop : undefined}
               hideDownload={isDownloaded}
+              onContextCreateFolder={isMyDrive ? () => setCreateFolderOpen(true) : undefined}
+              onContextUpload={!isDownloaded ? () => setUploadOpen(true) : undefined}
             />
           )}
         </main>
@@ -442,6 +446,11 @@ function App() {
         fileCount={files.length}
         onClose={() => setEmergencyRotationOpen(false)}
         onConfirm={handleEmergencyRotation}
+      />
+      <CreateFolderModal
+        isOpen={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        onConfirm={(name) => handleCreateFolder(currentFolder === '/' ? `/${name}` : `${currentFolder}/${name}`)}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>

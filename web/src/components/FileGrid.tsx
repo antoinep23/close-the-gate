@@ -1,9 +1,54 @@
-import { useState, useMemo, useRef } from 'react';
-import { AiFillFolder, AiOutlineDelete, AiOutlineFolderOpen } from 'react-icons/ai';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { AiFillFolder, AiOutlineDelete, AiOutlineFolderOpen, AiOutlineFolderAdd, AiOutlineCloudUpload } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { formatSize } from '../utils/format';
 import { FileCard } from './FileCard';
 import { FileRow } from './FileRow';
+
+function ContextMenu({ x, y, onCreateFolder, onUpload, onClose }: { x: number; y: number; onCreateFolder?: () => void; onUpload?: () => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [onClose]);
+
+  // Adjust position to avoid going off-screen
+  const style: React.CSSProperties = {
+    position: 'fixed',
+    top: y,
+    left: x,
+    zIndex: 9999,
+  };
+
+  return (
+    <div ref={ref} style={style} className="bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+      {onCreateFolder && (
+        <button
+          onClick={() => { onCreateFolder(); onClose(); }}
+          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <AiOutlineFolderAdd className="w-4 h-4 text-gray-500" />
+          New folder
+        </button>
+      )}
+      {onUpload && (
+        <button
+          onClick={() => { onUpload(); onClose(); }}
+          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <AiOutlineCloudUpload className="w-4 h-4 text-gray-500" />
+          Upload file
+        </button>
+      )}
+    </div>
+  );
+}
 
 type SortField = 'uploadDate' | 'size';
 type SortDirection = 'asc' | 'desc';
@@ -31,6 +76,8 @@ interface FileGridProps {
   onFileDrop?: (fileName: string, targetFolder: string) => void;
   onFolderDrop?: (sourceFolder: string, targetFolder: string) => void;
   hideDownload?: boolean;
+  onContextCreateFolder?: () => void;
+  onContextUpload?: () => void;
 }
 
 function SortArrow({ field, activeField, direction }: { field: SortField; activeField: SortField | null; direction: SortDirection }) {
@@ -55,11 +102,19 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onMoveFolderClick, onFileDrop, onFolderDrop, hideDownload }: FileGridProps) {
+export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onMoveFolderClick, onFileDrop, onFolderDrop, hideDownload, onContextCreateFolder, onContextUpload }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const folderDragGhostRef = useRef<HTMLDivElement | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+  function handleContextMenu(e: React.MouseEvent) {
+    // Only show context menu if at least one action is available
+    if (!onContextCreateFolder && !onContextUpload) return;
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  }
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -93,15 +148,19 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
 
   if (files.length === 0 && !hasSubFolders) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
+      <div
+        className="flex items-center justify-center flex-1 min-h-[calc(100vh-200px)] text-gray-400"
+        onContextMenu={handleContextMenu}
+      >
         <p className="text-sm">No files here</p>
+        {contextMenu && <ContextMenu x={contextMenu.x} y={contextMenu.y} onCreateFolder={onContextCreateFolder} onUpload={onContextUpload} onClose={() => setContextMenu(null)} />}
       </div>
     );
   }
 
   if (viewMode === 'list') {
     return (
-      <div className="px-6 pt-2">
+      <div className="px-6 pt-2 min-h-[calc(100vh-200px)]" onContextMenu={handleContextMenu}>
         <table className="w-full">
           <thead>
             <tr className="text-left text-[13px] text-gray-500 border-b border-gray-300">
@@ -232,12 +291,13 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
             ))}
           </tbody>
         </table>
+        {contextMenu && <ContextMenu x={contextMenu.x} y={contextMenu.y} onCreateFolder={onContextCreateFolder} onUpload={onContextUpload} onClose={() => setContextMenu(null)} />}
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-[calc(100vh-200px)]" onContextMenu={handleContextMenu}>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 auto-rows-fr">
         {hasSubFolders && sortedSubFolders.map((folder) => {
           const name = folder.split('/').pop() || folder;
@@ -312,6 +372,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
           />
         ))}
       </div>
+      {contextMenu && <ContextMenu x={contextMenu.x} y={contextMenu.y} onCreateFolder={onContextCreateFolder} onUpload={onContextUpload} onClose={() => setContextMenu(null)} />}
     </div>
   );
 }
