@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Close the Gate - Zero-Knowledge Encrypted Cloud Storage</title>
+  <meta name="description" content="A privacy-first software to upload encrypted-only files to AWS S3. Full control over your keys and encryption. Zero-Knowledge architecture.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-brand">
+        <img src="assets/logo.png" alt="Close the Gate" class="nav-logo">
+        <span>Close the Gate</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#screenshots">See it in action</a>
+        <a href="https://github.com/antoinep23/close-the-gate" class="btn btn-sm" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-content">
+        <h1>Your files. Your keys.<br><span class="gradient-text">Your privacy.</span></h1>
+        <p class="hero-subtitle">
+          A zero-knowledge encrypted file storage system built on AWS S3. 
+          The cloud never sees your data or your keys. Everything is encrypted locally before it leaves your machine.
+        </p>
+        <div class="hero-actions">
+          <a href="https://github.com/antoinep23/close-the-gate" class="btn btn-primary" target="_blank" rel="noopener">
+            Get Started
+          </a>
+          <a href="#how-it-works" class="btn btn-ghost">
+            Learn more
+          </a>
+        </div>
+        <div class="hero-badges">
+          <span class="badge">AES-256-GCM</span>
+          <span class="badge">HMAC SHA-256</span>
+          <span class="badge">Zero-Knowledge</span>
+          <span class="badge">Self-hosted</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img src="assets/screen_ui.png" alt="Close the Gate Interface" class="hero-screenshot">
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Features -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Built for privacy</h2>
+        <p>Every design decision prioritizes your data sovereignty. No compromises.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3>Client-side encryption</h3>
+          <p>All cryptographic operations happen on your machine. Files are encrypted with AES-256-GCM before upload. The cloud only stores ciphertext.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          </div>
+          <h3>You own the keys</h3>
+          <p>Keys are generated locally and stored on your machine with restricted permissions (mode 0600). They never leave your environment.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Zero-Knowledge</h3>
+          <p>AWS S3 and DynamoDB never have access to raw data or keys. File names are hashed with HMAC SHA-256. Metadata stores only what's necessary.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </div>
+          <h3>Key rotation</h3>
+          <p>Rotate encryption keys per-file, in batch, or trigger an emergency rotation for all files. Auto-rotation with configurable intervals.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3>In-memory preview</h3>
+          <p>Preview encrypted files without ever writing to disk. Decrypted on the fly in memory, then discarded. Maximum privacy.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>Web UI + CLI + SDK</h3>
+          <p>Use the Google Drive-style web interface, the command-line tool, or import the TypeScript SDK directly into your own code.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how-it-works" class="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <h2>How it works</h2>
+        <p>A simple pipeline that keeps your data safe at every step.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Generate a key</h3>
+            <p>A random AES-256 key is generated locally using Node.js crypto. It's saved to your disk with restricted file permissions. The key never touches a network.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Encrypt locally</h3>
+            <p>Your file is read, encrypted with AES-256-GCM using a random IV, and the file name is hashed with HMAC SHA-256. The result is a binary payload: <code>IV + Ciphertext</code>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Upload to S3</h3>
+            <p>The encrypted payload is uploaded to your own S3 bucket under the hashed name. The bucket only ever contains unreadable ciphertext with opaque file names.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>Download & decrypt</h3>
+            <p>To access a file, the payload is fetched from S3, decrypted locally with your key, and either saved or previewed in-memory. The cloud never processes plaintext.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 2rem;">
+      <h3 style="margin-bottom: 1rem;">The power of the cloud, the privacy of local storage.</h3>
+      <p>Close the Gate gives you the scalability and availability of AWS S3 without ever compromising on privacy. Your files are encrypted before they leave your machine. The cloud stores only ciphertext it can never read.</p>
+    </div>
+    </div>
+  </section>
+
+  <!-- Screenshots -->
+  <section id="screenshots" class="screenshots">
+    <div class="container">
+      <div class="section-header">
+        <h2>See it in action</h2>
+        <p>A familiar interface with privacy built in from the ground up.</p>
+      </div>
+      <div class="screenshots-grid">
+        <div class="screenshot-card" onclick="openLightbox(this)">
+          <img src="assets/screen_ui.png" alt="Main interface">
+          <span>File management</span>
+        </div>
+        <div class="screenshot-card" onclick="openLightbox(this)">
+          <img src="assets/upload_file.png" alt="Upload with progress">
+          <span>Encrypted upload</span>
+        </div>
+        <div class="screenshot-card" onclick="openLightbox(this)">
+          <img src="assets/key_backup.png" alt="Key backup">
+          <span>Key backup & restore</span>
+        </div>
+        <div class="screenshot-card" onclick="openLightbox(this)">
+          <img src="assets/global_rotation.png" alt="Emergency rotation">
+          <span>Emergency rotation</span>
+        </div>
+        <div class="screenshot-card" onclick="openLightbox(this)">
+          <img src="assets/high_security_mode.png" alt="High-security mode">
+          <span>High-security mode</span>
+        </div>
+        <div class="screenshot-card" onclick="openLightbox(this)">
+          <img src="assets/file_preview.png" alt="File preview">
+          <span>File preview (loaded in-memory, no disk writes)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <img src="" alt="Screenshot preview" id="lightbox-img">
+  </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container cta-inner">
+      <h2>Take back control of your data</h2>
+      <p>Open source, self-hosted, zero-knowledge. Deploy in minutes with Docker.</p>
+      <div class="cta-actions">
+        <a href="https://github.com/antoinep23/close-the-gate" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
+          View on GitHub
+        </a>
+      </div>
+      <div class="cta-install">
+        <code>docker compose up -d</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="assets/logo.png" alt="Close the Gate" class="footer-logo">
+        <span>Close the Gate</span>
+      </div>
+      <p class="footer-copy">Open source under AGPL-3.0 License. Built by <a href="https://github.com/antoinep23" target="_blank" rel="noopener">antoinep23</a>.</p>
+    </div>
+  </footer>
+
+  <script>
+    function openLightbox(card) {
+      const img = card.querySelector('img');
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightbox.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+      if (e.target === e.currentTarget || e.target.id === 'lightbox-img') {
+        document.getElementById('lightbox').classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.getElementById('lightbox').classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
+</body>
+</html>

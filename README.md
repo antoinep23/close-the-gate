@@ -14,20 +14,14 @@ The software is developped using TypeScript over Node.js.
 
 ## Features Summary
 
-- Local cryptographic key generation and secure local storage (mode 0600)
-- AES-256-GCM file encryption using random Initialization Vectors (IV)
-- HMAC SHA-256 file name hashing
-- Secure payload structure for S3 upload (IV + Ciphertext)
-- Multipart S3 upload with real-time progress tracking
-- DynamoDB integration for metadata tracking
-- Virtual folder structure (DynamoDB-based, S3 remains flat)
-- In-memory file preview (no disk write, privacy-first)
-- Key rotation (manual per-file, batch, or automatic)
-- Emergency key rotation for all files in one click
-- Auto key rotation with configurable interval and auto-generated keys
-- Password-protected key backup and restore (PBKDF2 + AES-256-GCM)
-- Per-file deletion protection with confirmation safeguards
-- Drag and drop file/folder organization
+- **AES-256-GCM encryption** with locally generated keys (mode 0600, never leave your machine)
+- **Zero-Knowledge storage** — S3 stores only ciphertext, file names are HMAC SHA-256 hashed
+- **In-memory file preview** — decrypt and view without writing to disk
+- **Key rotation** — per-file, batch, emergency, or automatic with configurable intervals
+- **High security mode** — keys encrypted at rest, decrypted in RAM only when unlocked
+- **Password-protected key backup and restore** (PBKDF2 + AES-256-GCM)
+- **Web UI, CLI, and TypeScript SDK** — Google Drive-style interface with drag & drop, inline rename, context menu
+- **Docker-ready** — deploy in one command
 
 ## Prerequisites
 
@@ -97,12 +91,17 @@ The web interface also provides:
 
 - Real-time upload progress bar (transfer + server-side encryption + S3 upload)
 - Virtual folder organization with breadcrumb navigation and drag & drop
-- In-memory file preview (decrypted on the fly, never written to disk)
+- In-memory file preview with fullscreen mode (decrypted on the fly, never written to disk)
+- Double-click to preview files, double-click to open folders
+- Inline rename for files and folders (click on the name)
+- Right-click context menu (create folder, upload file)
 - Key rotation (per-file, batch, or emergency rotation for all files)
 - Auto key rotation with configurable interval (Settings > Auto Key Rotation)
+- High security mode: keys encrypted at rest, loaded into RAM only when unlocked
 - Password-protected key backup and restore
 - Per-file deletion protection (lock/unlock with confirmation)
 - Sortable file list by date and size (list and grid view)
+- Custom drag preview (icon + filename) for clean drag & drop UX
 
 ![Close the Gate Web UI](resources/screen_ui.png)
 
@@ -113,6 +112,10 @@ The web interface also provides:
 |             Key backup              |             Emergency rotation             |
 | :---------------------------------: | :----------------------------------------: |
 | ![Backup](resources/key_backup.png) | ![Rotation](resources/global_rotation.png) |
+
+|       In-memory file preview        |          High security mode          |
+| :---------------------------------: | :----------------------------------: |
+| ![Preview](resources/file_preview.png) | ![High Security](resources/high_security_mode.png) |
 
 ### 2. Command Line Interface (CLI)
 
