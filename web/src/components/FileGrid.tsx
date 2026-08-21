@@ -78,6 +78,8 @@ interface FileGridProps {
   hideDownload?: boolean;
   onContextCreateFolder?: () => void;
   onContextUpload?: () => void;
+  onRenameFile?: (oldName: string, newName: string) => void;
+  onRenameFolder?: (oldPath: string, newName: string) => void;
 }
 
 function SortArrow({ field, activeField, direction }: { field: SortField; activeField: SortField | null; direction: SortDirection }) {
@@ -102,18 +104,45 @@ function SortArrow({ field, activeField, direction }: { field: SortField; active
   );
 }
 
-export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onMoveFolderClick, onFileDrop, onFolderDrop, hideDownload, onContextCreateFolder, onContextUpload }: FileGridProps) {
+export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onFolderClick, onDeleteFolder, onMoveFolderClick, onFileDrop, onFolderDrop, hideDownload, onContextCreateFolder, onContextUpload, onRenameFile, onRenameFolder }: FileGridProps) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const folderDragGhostRef = useRef<HTMLDivElement | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [editingFolder, setEditingFolder] = useState<string | null>(null);
+  const [editFolderName, setEditFolderName] = useState('');
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   function handleContextMenu(e: React.MouseEvent) {
     // Only show context menu if at least one action is available
     if (!onContextCreateFolder && !onContextUpload) return;
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
+  }
+
+  function handleFolderNameClick(e: React.MouseEvent, folder: string) {
+    if (!onRenameFolder) return;
+    e.stopPropagation();
+    const folderName = folder.split('/').pop() || folder;
+    setEditingFolder(folder);
+    setEditFolderName(folderName);
+    setTimeout(() => folderInputRef.current?.select(), 0);
+  }
+
+  function handleFolderRenameSubmit() {
+    if (editingFolder && editFolderName.trim() && onRenameFolder) {
+      const oldName = editingFolder.split('/').pop() || '';
+      if (editFolderName.trim() !== oldName) {
+        onRenameFolder(editingFolder, editFolderName.trim());
+      }
+    }
+    setEditingFolder(null);
+  }
+
+  function handleFolderRenameKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') handleFolderRenameSubmit();
+    if (e.key === 'Escape') setEditingFolder(null);
   }
 
   function handleSort(field: SortField) {
@@ -237,7 +266,25 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                   <td className="py-3 px-2">
                     <div className="flex items-center gap-3">
                       <AiFillFolder className="w-6 h-6 text-[#5f6368] flex-shrink-0" />
-                      <span className="text-sm text-gray-800 font-medium">{name}</span>
+                      {editingFolder === folder ? (
+                        <input
+                          ref={folderInputRef}
+                          type="text"
+                          value={editFolderName}
+                          onChange={(e) => setEditFolderName(e.target.value)}
+                          onBlur={handleFolderRenameSubmit}
+                          onKeyDown={handleFolderRenameKeyDown}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-sm text-gray-800 font-medium border border-blue-400 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-200 max-w-[200px]"
+                        />
+                      ) : (
+                        <span
+                          className={`text-sm text-gray-800 font-medium ${onRenameFolder ? 'cursor-text hover:underline decoration-gray-300' : ''}`}
+                          onClick={(e) => handleFolderNameClick(e, folder)}
+                        >
+                          {name}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="py-3 text-[13px] text-gray-500 hidden md:table-cell">—</td>
@@ -286,6 +333,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                 onPreviewClick={onPreviewClick}
                 onMoveClick={onMoveClick}
                 onProtectionChange={onProtectionChange}
+                onRename={onRenameFile}
                 hideDownload={hideDownload}
               />
             ))}
@@ -328,7 +376,25 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
             >
               <div className="flex flex-col items-center justify-center gap-2 flex-1 py-4">
                 <AiFillFolder className="w-10 h-10 text-[#5f6368]" />
-                <span className="text-sm text-gray-800 font-medium truncate max-w-full px-1">{name}</span>
+                {editingFolder === folder ? (
+                  <input
+                    ref={folderInputRef}
+                    type="text"
+                    value={editFolderName}
+                    onChange={(e) => setEditFolderName(e.target.value)}
+                    onBlur={handleFolderRenameSubmit}
+                    onKeyDown={handleFolderRenameKeyDown}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-sm text-gray-800 font-medium text-center border border-blue-400 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-200 max-w-full"
+                  />
+                ) : (
+                  <span
+                    className={`text-sm text-gray-800 font-medium truncate max-w-full px-1 ${onRenameFolder ? 'cursor-text hover:underline decoration-gray-300' : ''}`}
+                    onClick={(e) => handleFolderNameClick(e, folder)}
+                  >
+                    {name}
+                  </span>
+                )}
                 {folderSizes?.[folder] ? (
                   <span className="text-[11px] text-gray-400">{formatSize(folderSizes[folder])}</span>
                 ) : null}
@@ -368,6 +434,7 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
             onPreviewClick={onPreviewClick}
             onMoveClick={onMoveClick}
             onProtectionChange={onProtectionChange}
+            onRename={onRenameFile}
             hideDownload={hideDownload}
           />
         ))}

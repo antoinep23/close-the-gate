@@ -24,7 +24,7 @@ import { useToasts } from './hooks/useToasts';
 import { useLockStatus } from './hooks/useLockStatus';
 import { useFolders } from './hooks/useFolders';
 import { useCapabilities } from './hooks/useCapabilities';
-import { openFile, deleteKey } from './services/api';
+import { openFile, deleteKey, renameFile, renameFolder } from './services/api';
 import { getFileCategory } from './utils/fileIcons';
 import { getSectionTitle, getSubFolders, computeFolderSizes } from './utils/folders';
 import type { FileCategory } from './utils/fileIcons';
@@ -360,6 +360,16 @@ function App() {
               hideDownload={isDownloaded}
               onContextCreateFolder={isMyDrive ? () => setCreateFolderOpen(true) : undefined}
               onContextUpload={!isDownloaded ? () => setUploadOpen(true) : undefined}
+              onRenameFile={!isDownloaded ? async (oldName, newName) => {
+                const result = await renameFile(oldName, newName);
+                if (result.success) { addToast('success', `Renamed to "${newName}"`); refetch(); }
+                else addToast('error', result.error || 'Rename failed');
+              } : undefined}
+              onRenameFolder={isMyDrive ? async (oldPath, newName) => {
+                const result = await renameFolder(oldPath, newName);
+                if (result.success) { addToast('success', `Folder renamed to "${newName}"`); refetchFolders(); refetch(); }
+                else addToast('error', result.error || 'Rename failed');
+              } : undefined}
             />
           )}
         </main>

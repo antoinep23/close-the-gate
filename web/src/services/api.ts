@@ -405,3 +405,35 @@ export async function moveFolderInto(sourceFolder: string, targetFolder: string)
 
   return { success: true, newPath: data.newPath };
 }
+
+export async function renameFile(oldName: string, newName: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`/api/files/${encodeURIComponent(oldName)}/rename`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newName }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to rename file' };
+  }
+
+  return { success: true };
+}
+
+export async function renameFolder(oldPath: string, newName: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch('/api/folders/rename', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder: oldPath, newName }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: data.error || 'Failed to rename folder' };
+  }
+
+  return { success: true };
+}

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
@@ -20,13 +20,17 @@ interface FileRowProps {
   onPreviewClick?: (fileName: string, keyName: string) => void;
   onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
+  onRename?: (oldName: string, newName: string) => void;
   onSelect?: () => void;
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onSelect, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onRename, onSelect, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(file.fileName);
   const {
     downloading, deleting, confirmOpen, setConfirmOpen, unlockOpen, setUnlockOpen,
     starred, isProtected, isLocalDelete,
@@ -74,6 +78,27 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
     onSelect?.();
   }
 
+  function handleNameClick(e: React.MouseEvent) {
+    if (!onRename) return;
+    e.stopPropagation();
+    setEditName(file.fileName);
+    setEditing(true);
+    setTimeout(() => renameInputRef.current?.select(), 0);
+  }
+
+  function handleRenameSubmit() {
+    setEditing(false);
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== file.fileName && onRename) {
+      onRename(file.fileName, trimmed);
+    }
+  }
+
+  function handleRenameKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') handleRenameSubmit();
+    if (e.key === 'Escape') { setEditing(false); setEditName(file.fileName); }
+  }
+
   function handleDoubleClick() {
     if (!confirmOpen && !deleting) {
       if (onPreviewClick) {
@@ -97,7 +122,25 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
         <td className="py-3 px-2">
           <div className="flex items-center gap-3">
             <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />
-            <span className="text-sm text-gray-800">{file.fileName}</span>
+            {editing ? (
+              <input
+                ref={renameInputRef}
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={handleRenameSubmit}
+                onKeyDown={handleRenameKeyDown}
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm text-gray-800 border border-blue-400 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-200 w-full max-w-[200px]"
+              />
+            ) : (
+              <span
+                className={`text-sm text-gray-800 ${onRename ? 'cursor-text hover:underline decoration-gray-300' : ''}`}
+                onClick={handleNameClick}
+              >
+                {file.fileName}
+              </span>
+            )}
           </div>
         </td>
         <td className="py-3 text-[13px] text-gray-500 hidden md:table-cell">{formatDate(file.uploadDate)}</td>
