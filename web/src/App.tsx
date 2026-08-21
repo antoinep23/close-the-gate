@@ -16,13 +16,15 @@ import { PreviewModal } from './components/PreviewModal';
 import { MoveFileModal } from './components/MoveFileModal';
 import { MoveFolderModal } from './components/MoveFolderModal';
 import { EmergencyRotationModal } from './components/EmergencyRotationModal';
+import { CreateFolderModal } from './components/CreateFolderModal';
 import { useFiles } from './hooks/useFiles';
 import { useSettings } from './hooks/useSettings';
 import { useKeys } from './hooks/useKeys';
 import { useToasts } from './hooks/useToasts';
 import { useLockStatus } from './hooks/useLockStatus';
 import { useFolders } from './hooks/useFolders';
-import { openFile, deleteKey } from './services/api';
+import { useCapabilities } from './hooks/useCapabilities';
+import { openFile, deleteKey, renameFile, renameFolder } from './services/api';
 import { getFileCategory } from './utils/fileIcons';
 import { getSectionTitle, getSubFolders, computeFolderSizes } from './utils/folders';
 import type { FileCategory } from './utils/fileIcons';
@@ -46,6 +48,7 @@ function App() {
   const [moveFile, setMoveFile] = useState<{ fileName: string; folder: string } | null>(null);
   const [emergencyRotationOpen, setEmergencyRotationOpen] = useState(false);
   const [moveFolderSource, setMoveFolderSource] = useState<string | null>(null);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
   // Downloaded files (local section)
   const [downloadedFiles, setDownloadedFiles] = useState<FileItem[]>([]);
@@ -57,6 +60,7 @@ function App() {
   const { keys, refetchKeys } = useKeys();
   const { lockStatus, handleLock, handleUnlockSuccess, handleHighSecurityToggle } = useLockStatus(refetchKeys, addToast, saveSettings);
   const { folders, refetchFolders, handleCreateFolder, handleDeleteFolder, handleFileDrop, handleFolderDrop } = useFolders(addToast, refetch);
+  const { canOpenFiles } = useCapabilities();
 
   // Fetch downloaded files
   const fetchDownloaded = useCallback(async () => {
@@ -338,7 +342,7 @@ function App() {
               viewMode={viewMode}
               onDownloadSuccess={onDownloadSuccess}
               onDownloadError={onDownloadError}
-              onFileOpen={isDownloaded ? onFileOpen : undefined}
+              onFileOpen={isDownloaded && canOpenFiles ? onFileOpen : undefined}
               onStarToggle={onStarToggle}
               onDeleteSuccess={onDeleteSuccess}
               onDeleteError={onDeleteError}
@@ -354,6 +358,18 @@ function App() {
               onFileDrop={isMyDrive ? handleFileDrop : undefined}
               onFolderDrop={isMyDrive ? handleFolderDrop : undefined}
               hideDownload={isDownloaded}
+              onContextCreateFolder={isMyDrive ? () => setCreateFolderOpen(true) : undefined}
+              onContextUpload={!isDownloaded ? () => setUploadOpen(true) : undefined}
+              onRenameFile={!isDownloaded ? async (oldName, newName) => {
+                const result = await renameFile(oldName, newName);
+                if (result.success) { addToast('success', `Renamed to "${newName}"`); refetch(); }
+                else addToast('error', result.error || 'Rename failed');
+              } : undefined}
+              onRenameFolder={isMyDrive ? async (oldPath, newName) => {
+                const result = await renameFolder(oldPath, newName);
+                if (result.success) { addToast('success', `Folder renamed to "${newName}"`); refetchFolders(); refetch(); }
+                else addToast('error', result.error || 'Rename failed');
+              } : undefined}
             />
           )}
         </main>
@@ -440,6 +456,11 @@ function App() {
         fileCount={files.length}
         onClose={() => setEmergencyRotationOpen(false)}
         onConfirm={handleEmergencyRotation}
+      />
+      <CreateFolderModal
+        isOpen={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        onConfirm={(name) => handleCreateFolder(currentFolder === '/' ? `/${name}` : `${currentFolder}/${name}`)}
       />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>

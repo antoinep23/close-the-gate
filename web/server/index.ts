@@ -505,9 +505,29 @@ app.get('/api/downloaded', (_req, res) => {
   }
 });
 
+// --- Detect if desktop open command is available ---
+const canOpenFiles = (() => {
+  try {
+    execSync('which open', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+// --- Capabilities endpoint ---
+app.get('/api/capabilities', (_req, res) => {
+  res.json({ canOpenFiles });
+});
+
 // --- Open file endpoint ---
 
 app.post('/api/open', (req, res) => {
+  if (!canOpenFiles) {
+    res.status(501).json({ error: 'File opening is not supported in this environment (container mode)' });
+    return;
+  }
+
   const { fileName } = req.body;
 
   if (!fileName) {
@@ -542,6 +562,11 @@ app.post('/api/open', (req, res) => {
 // --- Open download folder endpoint ---
 
 app.post('/api/open-folder', (_req, res) => {
+  if (!canOpenFiles) {
+    res.status(501).json({ error: 'Folder opening is not supported in this environment (container mode)' });
+    return;
+  }
+
   try {
     const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const projectRoot = path.resolve(configPath, '..');
@@ -798,6 +823,137 @@ app.patch('/api/files/:fileName/move', async (req, res) => {
   } catch (err) {
     console.error('Move file error:', err);
     res.status(500).json({ error: 'Failed to move file' });
+  }
+});
+
+// --- Rename file endpoint ---
+
+app.patch('/api/files/:fileName/rename', async (req, res) => {
+  const { fileName } = req.params;
+  const { newName } = req.body;
+
+  if (!fileName || !newName) {
+    res.status(400).json({ error: 'fileName and newName are required' });
+    return;
+  }
+
+  if (newName.includes('/') || newName.includes('\\')) {
+    res.status(400).json({ error: 'Invalid file name' });
+    return;
+  }
+
+  try {
+    // Get current file metadata
+    const { GetItemCommand, PutItemCommand, DeleteItemCommand } = await import('@aws-sdk/client-dynamodb');
+    const { marshall } = await import('@aws-sdk/util-dynamodb');
+
+    const getCmd = new GetItemCommand({
+      TableName: tableName,
+      Key: { fileName: { S: fileName } },
+    });
+    const record = await dynamoClient.send(getCmd);
+
+    if (!record.Item) {
+      res.status(404).json({ error: 'File not found' });
+      return;
+    }
+
+    const item = unmarshall(record.Item);
+
+    // Create new record with new name
+    const newItem = { ...item, fileName: newName };
+    await dynamoClient.send(new PutItemCommand({
+      TableName: tableName,
+      Item: marshall(newItem),
+    }));
+
+    // Delete old record
+    await dynamoClient.send(new DeleteItemCommand({
+      TableName: tableName,
+      Key: { fileName: { S: fileName } },
+    }));
+
+    res.json({ success: true, oldName: fileName, newName });
+  } catch (err) {
+    console.error('Rename file error:', err);
+    res.status(500).json({ error: 'Failed to rename file' });
+  }
+});
+
+// --- Rename folder endpoint ---
+
+app.post('/api/folders/rename', (req, res) => {
+  const { folder, newName } = req.body;
+
+  if (!folder || !newName || folder === '/') {
+    res.status(400).json({ error: 'folder and newName are required, cannot rename root' });
+    return;
+  }
+
+  if (newName.includes('/') || newName.includes('\\')) {
+    res.status(400).json({ error: 'Invalid folder name' });
+    return;
+  }
+
+  try {
+    const data = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const folders: string[] = data.folders || ['/'];
+
+    if (!folders.includes(folder)) {
+      res.status(404).json({ error: 'Folder not found' });
+      return;
+    }
+
+    // Compute new path: replace last segment with new name
+    const segments = folder.split('/').filter(Boolean);
+    segments[segments.length - 1] = newName;
+    const newPath = '/' + segments.join('/');
+
+    if (folders.includes(newPath)) {
+      res.status(409).json({ error: 'A folder with that name already exists' });
+      return;
+    }
+
+    // Rename folder and all sub-folders
+    data.folders = folders.map((f: string) => {
+      if (f === folder) return newPath;
+      if (f.startsWith(folder + '/')) return newPath + f.slice(folder.length);
+      return f;
+    });
+    fs.writeFileSync(configPath, JSON.stringify(data, null, 2) + '\n');
+
+    // Update files in DynamoDB (async, fire-and-forget for speed)
+    (async () => {
+      try {
+        const result = await dynamoClient.send(new ScanCommand({ TableName: tableName }));
+        const items = (result.Items || []).map((item) => unmarshall(item));
+
+        for (const item of items) {
+          const fileFolder = item.folder || '/';
+          let updatedFolder: string | null = null;
+
+          if (fileFolder === folder) updatedFolder = newPath;
+          else if (fileFolder.startsWith(folder + '/')) updatedFolder = newPath + fileFolder.slice(folder.length);
+
+          if (updatedFolder) {
+            await dynamoClient.send(new UpdateItemCommand({
+              TableName: tableName,
+              Key: { fileName: { S: item.fileName } },
+              UpdateExpression: 'SET folder = :folder',
+              ExpressionAttributeValues: { ':folder': { S: updatedFolder } },
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Rename folder DynamoDB update error:', err);
+      }
+    })();
+
+    res.json({ success: true, oldPath: folder, newPath });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Rename folder error:', message);
+    res.status(500).json({ error: message });
   }
 });
 
