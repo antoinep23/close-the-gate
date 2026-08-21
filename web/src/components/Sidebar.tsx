@@ -158,7 +158,7 @@ export function Sidebar({ activeSection, onSectionChange, files, keys, region, o
 
         <div className="p-4 border-t border-gray-200">
           <div className="text-xs text-gray-500 text-center">{totalStorageSize} used</div>
-          <div className="text-xs text-gray-400 text-center mt-0.5">Est. {monthlyCost}/mo</div>
+          <div className="text-xs text-gray-400 text-center mt-0.5">Est. {monthlyCost}/mo (storage only)</div>
         </div>
       </aside>
     </>
