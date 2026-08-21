@@ -163,31 +163,38 @@
         <p>A familiar interface with privacy built in from the ground up.</p>
       </div>
       <div class="screenshots-grid">
-        <div class="screenshot-card">
+        <div class="screenshot-card" onclick="openLightbox(this)">
           <img src="assets/screen_ui.png" alt="Main interface">
           <span>File management</span>
         </div>
-        <div class="screenshot-card">
+        <div class="screenshot-card" onclick="openLightbox(this)">
           <img src="assets/upload_file.png" alt="Upload with progress">
           <span>Encrypted upload</span>
         </div>
-        <div class="screenshot-card">
+        <div class="screenshot-card" onclick="openLightbox(this)">
           <img src="assets/key_backup.png" alt="Key backup">
           <span>Key backup & restore</span>
         </div>
-        <div class="screenshot-card">
+        <div class="screenshot-card" onclick="openLightbox(this)">
           <img src="assets/global_rotation.png" alt="Emergency rotation">
           <span>Emergency rotation</span>
         </div>
-        <div class="screenshot-card">
+        <div class="screenshot-card" onclick="openLightbox(this)">
           <img src="assets/high_security_mode.png" alt="High-security mode">
           <span>High-security mode</span>
         </div>
-        <div class="screenshot-card">
+        <div class="screenshot-card" onclick="openLightbox(this)">
           <img src="assets/file_preview.png" alt="File preview">
           <span>File preview (loaded in-memory, no disk writes)</span>
+        </div>
       </div>
     </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <img src="" alt="Screenshot preview" id="lightbox-img">
+  </div>
   </section>
 
   <!-- CTA -->
@@ -217,5 +224,30 @@
     </div>
   </footer>
 
+  <script>
+    function openLightbox(card) {
+      const img = card.querySelector('img');
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightbox.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+      if (e.target === e.currentTarget || e.target.id === 'lightbox-img') {
+        document.getElementById('lightbox').classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.getElementById('lightbox').classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
 </body>
 </html>
