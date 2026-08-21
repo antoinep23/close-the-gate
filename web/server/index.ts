@@ -505,9 +505,29 @@ app.get('/api/downloaded', (_req, res) => {
   }
 });
 
+// --- Detect if desktop open command is available ---
+const canOpenFiles = (() => {
+  try {
+    execSync('which open', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+// --- Capabilities endpoint ---
+app.get('/api/capabilities', (_req, res) => {
+  res.json({ canOpenFiles });
+});
+
 // --- Open file endpoint ---
 
 app.post('/api/open', (req, res) => {
+  if (!canOpenFiles) {
+    res.status(501).json({ error: 'File opening is not supported in this environment (container mode)' });
+    return;
+  }
+
   const { fileName } = req.body;
 
   if (!fileName) {
@@ -542,6 +562,11 @@ app.post('/api/open', (req, res) => {
 // --- Open download folder endpoint ---
 
 app.post('/api/open-folder', (_req, res) => {
+  if (!canOpenFiles) {
+    res.status(501).json({ error: 'Folder opening is not supported in this environment (container mode)' });
+    return;
+  }
+
   try {
     const settings = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const projectRoot = path.resolve(configPath, '..');

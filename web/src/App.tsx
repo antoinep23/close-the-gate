@@ -22,6 +22,7 @@ import { useKeys } from './hooks/useKeys';
 import { useToasts } from './hooks/useToasts';
 import { useLockStatus } from './hooks/useLockStatus';
 import { useFolders } from './hooks/useFolders';
+import { useCapabilities } from './hooks/useCapabilities';
 import { openFile, deleteKey } from './services/api';
 import { getFileCategory } from './utils/fileIcons';
 import { getSectionTitle, getSubFolders, computeFolderSizes } from './utils/folders';
@@ -57,6 +58,7 @@ function App() {
   const { keys, refetchKeys } = useKeys();
   const { lockStatus, handleLock, handleUnlockSuccess, handleHighSecurityToggle } = useLockStatus(refetchKeys, addToast, saveSettings);
   const { folders, refetchFolders, handleCreateFolder, handleDeleteFolder, handleFileDrop, handleFolderDrop } = useFolders(addToast, refetch);
+  const { canOpenFiles } = useCapabilities();
 
   // Fetch downloaded files
   const fetchDownloaded = useCallback(async () => {
@@ -338,7 +340,7 @@ function App() {
               viewMode={viewMode}
               onDownloadSuccess={onDownloadSuccess}
               onDownloadError={onDownloadError}
-              onFileOpen={isDownloaded ? onFileOpen : undefined}
+              onFileOpen={isDownloaded && canOpenFiles ? onFileOpen : undefined}
               onStarToggle={onStarToggle}
               onDeleteSuccess={onDeleteSuccess}
               onDeleteError={onDeleteError}
