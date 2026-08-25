@@ -661,6 +661,7 @@ app.patch('/api/files/:fileName/star', async (req, res) => {
       ExpressionAttributeValues: { ':starred': { BOOL: isStarred } },
     });
     await dynamoClient.send(command);
+    audit(isStarred ? 'star' : 'unstar', { fileName });
     res.json({ success: true, fileName, isStarred });
   } catch (err) {
     console.error('Toggle star error:', err);
@@ -687,6 +688,7 @@ app.patch('/api/files/:fileName/protect', async (req, res) => {
       ExpressionAttributeValues: { ':protected': { BOOL: isProtected } },
     });
     await dynamoClient.send(command);
+    audit(isProtected ? 'protect' : 'unprotect', { fileName });
     res.json({ success: true, fileName, isProtected });
   } catch (err) {
     console.error('Toggle protection error:', err);
@@ -923,7 +925,7 @@ app.patch('/api/files/:fileName/rename', async (req, res) => {
       Key: { fileName: { S: fileName } },
     }));
 
-    audit('rename', { oldName: fileName, newName });
+    audit('rename', { oldName: fileName, newName, folder: item.folder || '/' });
     res.json({ success: true, oldName: fileName, newName });
   } catch (err) {
     console.error('Rename file error:', err);

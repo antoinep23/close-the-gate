@@ -33,13 +33,15 @@ function formatTimestamp(iso: string): string {
 
 function getResource(entry: AuditEntry): string {
   const d = entry.details;
-  if (d.fileName) return d.fileName as string;
-  if (d.oldName) return `${d.oldName} → ${d.newName}`;
+  const folder = d.folder ? d.folder as string : null;
+  const prefix = folder && folder !== '/' ? `${folder}/` : '';
+
+  if (d.oldName) return `${prefix}${d.oldName} → ${d.newName}`;
+  if (d.fileName) return `${prefix}${d.fileName}`;
   if (d.keyName) return d.keyName as string;
-  if (d.folder) return d.folder as string;
-  if (d.oldPath) return `${(d.oldPath as string).split('/').pop()} → ${(d.newPath as string || '').split('/').pop()}`;
-  if (d.sourceFolder) return d.sourceFolder as string;
-  if (d.rotated !== undefined) return `${d.rotated}/${d.total} files`;
+  if (d.oldPath) return `${d.oldPath} → ${d.newPath}`;
+  if (d.sourceFolder) return `${d.sourceFolder} → ${d.targetFolder}`;
+  if (d.rotated !== undefined) return `${d.rotated}/${d.total} files → ${d.targetKey}`;
   if (d.backupFileName) return d.backupFileName as string;
   if (d.keyCount !== undefined) return `${d.keyCount} key(s)`;
   return '—';
