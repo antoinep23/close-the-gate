@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { AiFillFolder, AiOutlineDelete, AiOutlineFolderOpen, AiOutlineFolderAdd, AiOutlineCloudUpload } from 'react-icons/ai';
+import { AiFillFolder, AiOutlineDelete, AiOutlineFolderOpen, AiOutlineFolderAdd, AiOutlineCloudUpload, AiOutlineEdit } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { formatSize } from '../utils/format';
 import { FileCard } from './FileCard';
@@ -278,12 +278,18 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                           className="text-sm text-gray-800 font-medium border border-blue-400 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-200 max-w-[200px]"
                         />
                       ) : (
-                        <span
-                          className={`text-sm text-gray-800 font-medium ${onRenameFolder ? 'cursor-text hover:underline decoration-gray-300' : ''}`}
-                          onClick={(e) => handleFolderNameClick(e, folder)}
-                        >
-                          {name}
-                        </span>
+                        <>
+                          <span className="text-sm text-gray-800 font-medium">{name}</span>
+                          {onRenameFolder && (
+                            <button
+                              onClick={(e) => handleFolderNameClick(e, folder)}
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+                              title="Rename"
+                            >
+                              <AiOutlineEdit className="w-3.5 h-3.5 text-gray-400" />
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </td>
@@ -388,12 +394,18 @@ export function FileGrid({ files, subFolders, folderSizes, viewMode, onDownloadS
                     className="text-sm text-gray-800 font-medium text-center border border-blue-400 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-200 max-w-full"
                   />
                 ) : (
-                  <span
-                    className={`text-sm text-gray-800 font-medium truncate max-w-full px-1 ${onRenameFolder ? 'cursor-text hover:underline decoration-gray-300' : ''}`}
-                    onClick={(e) => handleFolderNameClick(e, folder)}
-                  >
-                    {name}
-                  </span>
+                  <div className="flex items-center gap-1 max-w-full px-1">
+                    <span className="text-sm text-gray-800 font-medium truncate">{name}</span>
+                    {onRenameFolder && (
+                      <button
+                        onClick={(e) => handleFolderNameClick(e, folder)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 cursor-pointer transition-all flex-shrink-0"
+                        title="Rename"
+                      >
+                        <AiOutlineEdit className="w-3 h-3 text-gray-400" />
+                      </button>
+                    )}
+                  </div>
                 )}
                 {folderSizes?.[folder] ? (
                   <span className="text-[11px] text-gray-400">{formatSize(folderSizes[folder])}</span>

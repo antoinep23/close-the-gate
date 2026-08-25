@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen, AiOutlineEdit } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { formatDate, formatSize } from '../utils/format';
@@ -107,13 +107,20 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
           className="text-sm text-gray-800 text-center border border-blue-400 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-200 w-full"
         />
       ) : (
-        <p
-          className={`text-sm text-gray-800 text-center truncate w-full px-1 ${onRename ? 'cursor-text hover:underline decoration-gray-300' : ''}`}
-          title={file.fileName}
-          onClick={handleNameClick}
-        >
-          {file.fileName}
-        </p>
+        <div className="flex items-center justify-center gap-1 w-full px-1">
+          <p className="text-sm text-gray-800 text-center truncate" title={file.fileName}>
+            {file.fileName}
+          </p>
+          {onRename && (
+            <button
+              onClick={handleNameClick}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-100 cursor-pointer transition-all flex-shrink-0"
+              title="Rename"
+            >
+              <AiOutlineEdit className="w-3 h-3 text-gray-400" />
+            </button>
+          )}
+        </div>
       )}
 
       {/* Date + size */}

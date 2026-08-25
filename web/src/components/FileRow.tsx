@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen, AiOutlineEdit } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { formatDate, formatSize } from '../utils/format';
@@ -134,12 +134,18 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
                 className="text-sm text-gray-800 border border-blue-400 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-200 w-full max-w-[200px]"
               />
             ) : (
-              <span
-                className={`text-sm text-gray-800 ${onRename ? 'cursor-text hover:underline decoration-gray-300' : ''}`}
-                onClick={handleNameClick}
-              >
-                {file.fileName}
-              </span>
+              <>
+                <span className="text-sm text-gray-800">{file.fileName}</span>
+                {onRename && (
+                  <button
+                    onClick={handleNameClick}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+                    title="Rename"
+                  >
+                    <AiOutlineEdit className="w-3.5 h-3.5 text-gray-400" />
+                  </button>
+                )}
+              </>
             )}
           </div>
         </td>
