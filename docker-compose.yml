@@ -9,5 +9,6 @@ services:
       - ./keys:/app/keys
       - ./files:/app/files
       - ./download:/app/download
+      - ./log:/app/log
       - ./config.json:/app/config.json
     restart: unless-stopped

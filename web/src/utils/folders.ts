@@ -5,6 +5,7 @@ export function getSectionTitle(section: string): string {
   if (section === 'recent') return 'Recent';
   if (section === 'starred') return 'Starred';
   if (section === 'downloaded') return 'Downloaded';
+  if (section === 'logs') return 'Audit Logs';
   if (section.startsWith('category-')) {
     const cat = section.replace('category-', '');
     return cat.charAt(0).toUpperCase() + cat.slice(1);

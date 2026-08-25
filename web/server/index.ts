@@ -12,6 +12,7 @@ import downloadRouter from './download';
 import uploadRouter from './upload';
 import KeyModule from '../../src/keys';
 import { keyStore, isUnlocked, setUnlocked, resetLockTimeout, clearLockTimeout, isHighSecurity, retrieveKey, setSessionPassword, getSessionPassword, secureWipe } from './keyStore';
+import { audit, readAuditLog, verifyAuditLog } from './auditLog';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -113,6 +114,7 @@ app.post('/api/unlock', (req, res) => {
     setSessionPassword(password);
     resetLockTimeout();
 
+    audit('unlock', { keyCount: restoredKeys.length });
     res.json({ success: true, keyCount: restoredKeys.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -123,6 +125,7 @@ app.post('/api/unlock', (req, res) => {
 app.post('/api/lock', (_req, res) => {
   secureWipe();
   clearLockTimeout();
+  audit('lock', {});
   res.json({ success: true });
 });
 
@@ -167,6 +170,7 @@ app.post('/api/high-security/enable', (req, res) => {
     settings.highSecurity = true;
     fs.writeFileSync(configPath, JSON.stringify(settings, null, 2) + '\n');
 
+    audit('high-security-enable', { keyCount: pemFiles.length });
     res.json({ success: true, keyCount: pemFiles.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -208,6 +212,7 @@ app.post('/api/high-security/disable', (_req, res) => {
     settings.highSecurity = false;
     fs.writeFileSync(configPath, JSON.stringify(settings, null, 2) + '\n');
 
+    audit('high-security-disable', {});
     res.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -295,11 +300,13 @@ app.post('/api/keys', (req, res) => {
         }
       }
 
+      audit('key-generate', { keyName: fileName });
       res.json({ success: true, keyName: fileName });
     } else {
       fs.mkdirSync(keysDir, { recursive: true });
       const filePath = path.join(keysDir, fileName);
       fs.writeFileSync(filePath, keyMaterial.export(), { mode: 0o600 });
+      audit('key-generate', { keyName: fileName });
       res.json({ success: true, keyName: fileName, path: filePath });
     }
   } catch (err) {
@@ -364,6 +371,7 @@ app.delete('/api/keys/:keyName', (req, res) => {
         if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
       }
 
+      audit('key-delete', { keyName });
       res.json({ success: true });
     } else {
       const filePath = path.join(keysDir, keyName);
@@ -374,6 +382,7 @@ app.delete('/api/keys/:keyName', (req, res) => {
       }
 
       fs.unlinkSync(filePath);
+      audit('key-delete', { keyName });
       res.json({ success: true });
     }
   } catch (err) {
@@ -403,6 +412,7 @@ app.post('/api/keys/backup', (req, res) => {
     const backupPath = Key.backup(password, keysDir, keysDir);
     const fileName = path.basename(backupPath);
 
+    audit('key-backup', { fileName });
     res.json({ success: true, fileName });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -437,6 +447,7 @@ app.post('/api/keys/restore', (req, res) => {
 
     const restoredKeys = Key.restore(password, backupPath, keysDir);
 
+    audit('key-restore', { backupFileName, restoredKeys });
     res.json({ success: true, restoredKeys });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -613,6 +624,7 @@ app.delete('/api/downloaded/:fileName', (req, res) => {
     }
 
     fs.unlinkSync(filePath);
+    audit('delete', { fileName, type: 'local' });
     res.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -748,6 +760,7 @@ app.post('/api/folders', (req, res) => {
     data.folders = folders;
     fs.writeFileSync(configPath, JSON.stringify(data, null, 2) + '\n');
 
+    audit('folder-create', { folder: normalized });
     res.json({ success: true, folder: normalized });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -793,6 +806,7 @@ app.delete('/api/folders', async (req, res) => {
     data.folders = folders.filter((f: string) => f !== folder && !f.startsWith(folder + '/'));
     fs.writeFileSync(configPath, JSON.stringify(data, null, 2) + '\n');
 
+    audit('folder-delete', { folder });
     res.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -819,6 +833,7 @@ app.patch('/api/files/:fileName/move', async (req, res) => {
       ExpressionAttributeValues: { ':folder': { S: folder } },
     });
     await dynamoClient.send(command);
+    audit('move', { fileName, folder });
     res.json({ success: true, fileName, folder });
   } catch (err) {
     console.error('Move file error:', err);
@@ -908,6 +923,7 @@ app.patch('/api/files/:fileName/rename', async (req, res) => {
       Key: { fileName: { S: fileName } },
     }));
 
+    audit('rename', { oldName: fileName, newName });
     res.json({ success: true, oldName: fileName, newName });
   } catch (err) {
     console.error('Rename file error:', err);
@@ -984,6 +1000,7 @@ app.post('/api/folders/rename', (req, res) => {
       }
     })();
 
+    audit('folder-rename', { oldPath: folder, newPath });
     res.json({ success: true, oldPath: folder, newPath });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -1053,12 +1070,26 @@ app.post('/api/folders/move', async (req, res) => {
       }
     }
 
+    audit('folder-move', { sourceFolder, targetFolder: newPath });
     res.json({ success: true, oldPath: sourceFolder, newPath });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Move folder error:', message);
     res.status(500).json({ error: message });
   }
+});
+
+// --- Audit log endpoints ---
+
+app.get('/api/audit-log', (_req, res) => {
+  const limit = parseInt(_req.query.limit as string) || 100;
+  const entries = readAuditLog(limit);
+  res.json(entries.reverse()); // Most recent first
+});
+
+app.get('/api/audit-log/verify', (_req, res) => {
+  const result = verifyAuditLog();
+  res.json(result);
 });
 
 // --- Serve frontend static files (production) ---
