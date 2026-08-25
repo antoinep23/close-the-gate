@@ -20,6 +20,7 @@ The software is developped using TypeScript over Node.js.
 - **Key rotation** — per-file, batch, emergency, or automatic with configurable intervals
 - **High security mode** — keys encrypted at rest, decrypted in RAM only when unlocked
 - **Password-protected key backup and restore** (PBKDF2 + AES-256-GCM)
+- **Audit trail** — see every action done on your drive, protected from tampering
 - **Web UI, CLI, and TypeScript SDK** — Google Drive-style interface with drag & drop, inline rename, context menu
 - **Docker-ready** — deploy in one command
 
@@ -113,8 +114,8 @@ The web interface also provides:
 | :---------------------------------: | :----------------------------------------: |
 | ![Backup](resources/key_backup.png) | ![Rotation](resources/global_rotation.png) |
 
-|       In-memory file preview        |          High security mode          |
-| :---------------------------------: | :----------------------------------: |
+|         In-memory file preview         |                 High security mode                 |
+| :------------------------------------: | :------------------------------------------------: |
 | ![Preview](resources/file_preview.png) | ![High Security](resources/high_security_mode.png) |
 
 ### 2. Command Line Interface (CLI)
