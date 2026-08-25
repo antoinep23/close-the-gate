@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
+import { LogViewer } from './components/LogViewer';
 import { RotationBanner } from './components/RotationBanner';
 import { FolderBreadcrumb } from './components/FolderBreadcrumb';
 import { UnlockBanner } from './components/UnlockBanner';
@@ -330,7 +331,9 @@ function App() {
             onRotateComplete={() => { refetch(); refetchKeys(); addToast('success', 'Key rotation completed'); }}
             onError={(err) => addToast('error', err)}
           />
-          {loading ? (
+          {activeSection === 'logs' ? (
+            <LogViewer />
+          ) : loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
             </div>

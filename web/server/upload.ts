@@ -3,6 +3,7 @@ import fs from 'fs';
 import { Router } from 'express';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import { audit } from './auditLog';
 import { randomUUID } from 'crypto';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
@@ -109,6 +110,7 @@ router.post('/upload', (req, res) => {
         }
 
         progressStore.set(uploadId, { phase: 'complete', percent: 100, done: true });
+        audit('upload', { fileName: uploadedFile.originalname, keyName, folder });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('Upload error:', message);

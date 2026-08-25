@@ -1,4 +1,4 @@
-import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload, AiOutlinePlus, AiOutlineDelete, AiOutlineSave, AiOutlineClockCircle } from 'react-icons/ai';
+import { AiOutlineStar, AiOutlineFileImage, AiOutlineFileText, AiOutlinePlayCircle, AiOutlineCode, AiOutlineFileZip, AiOutlineKey, AiOutlineDownload, AiOutlinePlus, AiOutlineDelete, AiOutlineSave, AiOutlineClockCircle, AiOutlineAudit } from 'react-icons/ai';
 import { HiOutlineFolderOpen } from 'react-icons/hi';
 import type { FileItem } from '../data/mockFiles';
 import type { FileCategory } from '../utils/fileIcons';
@@ -24,6 +24,7 @@ const navItems = [
   { id: 'recent', label: 'Recent', icon: AiOutlineClockCircle },
   { id: 'starred', label: 'Starred', icon: AiOutlineStar },
   { id: 'downloaded', label: 'Downloaded', icon: AiOutlineDownload },
+  { id: 'logs', label: 'Audit Logs', icon: AiOutlineAudit },
 ];
 
 const categoryItems: { id: FileCategory; label: string; icon: typeof AiOutlineFileImage }[] = [

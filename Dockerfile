@@ -39,7 +39,7 @@ COPY --from=builder /app/src ./src
 COPY tsconfig.json ./
 
 # Create default directories
-RUN mkdir -p keys files download
+RUN mkdir -p keys files download log
 
 # Default config
 COPY config.json ./

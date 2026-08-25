@@ -3,6 +3,7 @@ import fs from 'fs';
 import { Router } from 'express';
 import { fileURLToPath } from 'url';
 import { DynamoDBClient, GetItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { audit } from './auditLog';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
@@ -54,6 +55,7 @@ router.post('/download', async (req, res) => {
     const file = new File();
     const outputPath = await file.download(fileName, key, downloadPath);
 
+    audit('download', { fileName, keyName });
     res.json({ success: true, outputPath });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -101,6 +103,7 @@ router.post('/preview', async (req, res) => {
     const contentType = getContentType(fileName);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', 'inline');
+    audit('preview', { fileName, keyName });
     res.send(buffer);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -196,6 +199,7 @@ router.delete('/files/:fileName', async (req, res) => {
     const file = new File();
     const result = await file.delete(fileName, key);
 
+    audit('delete', { fileName, keyName });
     res.json({ success: true, message: result });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -257,6 +261,7 @@ router.post('/files/rotate', async (req, res) => {
     const localPath = path.join(filesPath, fileName);
     if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
 
+    audit('rotate', { fileName, currentKeyName, newKeyName });
     res.json({ success: true, message: `Key rotated for "${fileName}"` });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -428,6 +433,7 @@ router.post('/files/rotate-batch', async (req, res) => {
   }
 
   const successCount = results.filter((r) => r.success).length;
+  audit('rotate-batch', { rotated: successCount, total: files.length, targetKey: actualTargetKey });
   res.json({ success: true, results, rotated: successCount, total: files.length, targetKey: actualTargetKey });
 });
 
