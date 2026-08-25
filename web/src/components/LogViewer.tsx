@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AiOutlineCheckCircle, AiOutlineCloseCircle, AiOutlineReload, AiOutlineSafety, AiOutlineFilter, AiOutlineDown } from 'react-icons/ai';
+import { AiOutlineCheckCircle, AiOutlineCloseCircle, AiOutlineReload, AiOutlineSafety, AiOutlineFilter, AiOutlineDown, AiOutlineSearch } from 'react-icons/ai';
 import type { AuditAction } from '../../server/auditLog';
 
 interface AuditEntry {
@@ -81,11 +81,13 @@ export function LogViewer() {
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [verifying, setVerifying] = useState(false);
 
+  // Filters
   const [selectedActions, setSelectedActions] = useState<Set<AuditAction>>(new Set());
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -138,7 +140,8 @@ export function LogViewer() {
   const activeFilterCount =
     selectedActions.size + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0);
 
-  const filteredEntries = useMemo(() => {
+    const filteredEntries = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
     return entries.filter(entry => {
       if (selectedActions.size > 0 && !selectedActions.has(entry.action as AuditAction)) {
         return false;
@@ -154,9 +157,14 @@ export function LogViewer() {
           if (entryTime > toTime) return false;
         }
       }
+      if (query && !entry.eventId?.toLowerCase().includes(query) && !entry.hash.toLowerCase().includes(query)) {
+        return false;
+      }
       return true;
     });
-  }, [entries, selectedActions, dateFrom, dateTo]);
+  }, [entries, selectedActions, dateFrom, dateTo, searchQuery]);
+
+
 
   return (
     <div className="px-6 pt-2 pb-6">
@@ -187,9 +195,22 @@ export function LogViewer() {
           </span>
         )}
 
-                {/* Spacer pushes the filter selector to the right */}
+        {/* Spacer pushes the filter selector to the right */}
         <div className="flex-1" />
 
+
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by event ID..."
+            className="w-48 text-xs border border-gray-200 rounded-lg pl-7 pr-2 py-1.5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          />
+          <AiOutlineSearch className="w-3.5 h-3.5 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" />
+        </div>
+
+        {/* Filter dropdown */}
         <div className="relative" ref={filterRef}>
           <button
             onClick={() => setFilterOpen(o => !o)}
