@@ -56,7 +56,7 @@ function formatTimestamp(iso: string): string {
     hour12: false,
     timeZone: 'UTC',
   });
-  return `${formatted} (UTC)`;
+  return formatted;
 }
 
 function getResource(entry: AuditEntry): string {
@@ -281,7 +281,7 @@ export function LogViewer() {
               <th className="pb-2 pl-2 font-medium">Event ID</th>
               <th className="pb-2 font-medium">Event</th>
               <th className="pb-2 font-medium">Resource</th>
-              <th className="pb-2 pr-2 font-medium text-right">Time</th>
+              <th className="pb-2 pr-2 font-medium text-right">Time (UTC)</th>
             </tr>
           </thead>
           <tbody>
