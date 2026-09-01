@@ -30,6 +30,10 @@ function resolveFromRoot(p: string): string {
   return path.isAbsolute(p) ? p : path.resolve(projectRoot, p);
 }
 
+function fixEncoding(name: string): string {
+  return Buffer.from(name, 'latin1').toString('utf8');
+}
+
 // Configure multer to store uploaded files in the configured filesPath
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -39,7 +43,7 @@ const storage = multer.diskStorage({
     cb(null, filesDir);
   },
   filename: (_req, file, cb) => {
-    cb(null, file.originalname);
+    cb(null, fixEncoding(file.originalname));
   },
 });
 
@@ -82,6 +86,10 @@ router.post('/upload', (req, res) => {
       return;
     }
 
+    // Fix encoding: the on-disk file was saved with the UTF-8 corrected name
+    // (see multer filename callback), so use the same corrected name here.
+    const fileName = fixEncoding(uploadedFile.originalname);
+
     // Generate a unique upload ID and initialize progress
     const uploadId = randomUUID();
     progressStore.set(uploadId, { phase: 'queued', percent: 0, done: false });
@@ -99,18 +107,18 @@ router.post('/upload', (req, res) => {
         const key = retrieveKey(keyName, keysPath);
 
         const file = new File();
-        await file.upload(uploadedFile.originalname, key, filesPath, false, (phase: string, percent: number) => {
+        await file.upload(fileName, key, filesPath, false, (phase: string, percent: number) => {
           progressStore.set(uploadId, { phase, percent, done: false });
         }, folder);
 
         // Delete local file after successful upload (no need to keep it on disk)
-        const localFilePath = path.join(filesPath, uploadedFile.originalname);
+        const localFilePath = path.join(filesPath, fileName);
         if (fs.existsSync(localFilePath)) {
           fs.unlinkSync(localFilePath);
         }
 
         progressStore.set(uploadId, { phase: 'complete', percent: 100, done: true });
-        audit('upload', { fileName: uploadedFile.originalname, keyName, folder });
+        audit('upload', { fileName, keyName, folder });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('Upload error:', message);
