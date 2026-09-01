@@ -26,6 +26,54 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 const app = express();
 const port = 3001;
 
+/**
+ * Create the high-security backup without clobbering user backups.
+ * Key.backup() writes to a date-named file in the given dir which can
+ * collide with an existing user backup of the same day. To avoid that,
+ * we generate the backup inside an isolated temp subdirectory (containing
+ * only the .pem keys) and move the result to high-security.ctg-backup.
+ */
+function createHighSecurityBackup(password: string, keysDir: string): void {
+  const tmpDir = path.join(keysDir, '.hs-tmp');
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+  fs.mkdirSync(tmpDir, { recursive: true });
+  try {
+    // Copy only the .pem keys into the isolated temp dir
+    const pemFiles = fs.readdirSync(keysDir).filter((f) => f.endsWith('.pem'));
+    for (const f of pemFiles) {
+      fs.copyFileSync(path.join(keysDir, f), path.join(tmpDir, f));
+    }
+    // Backup from the temp dir (output also in temp dir to avoid collisions)
+    const backupPath = Key.backup(password, tmpDir, tmpDir);
+    const targetPath = path.join(keysDir, 'high-security.ctg-backup');
+    fs.copyFileSync(backupPath, targetPath);
+    fs.chmodSync(targetPath, 0o600);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Rebuild the high-security backup from the in-RAM keyStore.
+ * Uses an isolated temp dir so user .ctg-backup files are never touched.
+ */
+function rebuildHighSecurityBackup(password: string, keysDir: string): void {
+  const tmpDir = path.join(keysDir, '.hs-tmp');
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+  fs.mkdirSync(tmpDir, { recursive: true });
+  try {
+    for (const [name, buffer] of keyStore.entries()) {
+      fs.writeFileSync(path.join(tmpDir, name), buffer, { mode: 0o600 });
+    }
+    const backupPath = Key.backup(password, tmpDir, tmpDir);
+    const targetPath = path.join(keysDir, 'high-security.ctg-backup');
+    fs.copyFileSync(backupPath, targetPath);
+    fs.chmodSync(targetPath, 0o600);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -145,12 +193,7 @@ app.post('/api/high-security/enable', (req, res) => {
       : path.resolve(projectRoot, settings.keysPath);
 
     // Create the high-security backup
-    const backupPath = Key.backup(password, keysDir, keysDir);
-    // Rename to high-security.ctg-backup
-    const targetPath = path.join(keysDir, 'high-security.ctg-backup');
-    if (backupPath !== targetPath) {
-      fs.renameSync(backupPath, targetPath);
-    }
+    createHighSecurityBackup(password, keysDir);
 
     // Load keys into RAM before deleting from disk
     const pemFiles = fs.readdirSync(keysDir).filter((f: string) => f.endsWith('.pem'));
@@ -283,21 +326,7 @@ app.post('/api/keys', (req, res) => {
       // Update the backup file with all current keys using session password
       const sessionPwd = getSessionPassword();
       if (sessionPwd) {
-        fs.mkdirSync(keysDir, { recursive: true });
-        // Write all keys temporarily to create backup
-        for (const [name, buffer] of keyStore.entries()) {
-          fs.writeFileSync(path.join(keysDir, name), buffer, { mode: 0o600 });
-        }
-        const backupPath = Key.backup(sessionPwd, keysDir, keysDir);
-        const targetPath = path.join(keysDir, 'high-security.ctg-backup');
-        if (backupPath !== targetPath) {
-          fs.renameSync(backupPath, targetPath);
-        }
-        // Delete all .pem files from disk
-        for (const name of keyStore.keys()) {
-          const p = path.join(keysDir, name);
-          if (fs.existsSync(p)) fs.unlinkSync(p);
-        }
+        rebuildHighSecurityBackup(sessionPwd, keysDir);
       }
 
       audit('key-generate', { keyName: fileName });
@@ -352,19 +381,7 @@ app.delete('/api/keys/:keyName', (req, res) => {
       // Update backup
       const sessionPwd = getSessionPassword();
       if (sessionPwd && keyStore.size > 0) {
-        fs.mkdirSync(keysDir, { recursive: true });
-        for (const [name, buf] of keyStore.entries()) {
-          fs.writeFileSync(path.join(keysDir, name), buf, { mode: 0o600 });
-        }
-        const backupPath = Key.backup(sessionPwd, keysDir, keysDir);
-        const targetPath = path.join(keysDir, 'high-security.ctg-backup');
-        if (backupPath !== targetPath) {
-          fs.renameSync(backupPath, targetPath);
-        }
-        for (const name of keyStore.keys()) {
-          const p = path.join(keysDir, name);
-          if (fs.existsSync(p)) fs.unlinkSync(p);
-        }
+        rebuildHighSecurityBackup(sessionPwd, keysDir);
       } else if (sessionPwd && keyStore.size === 0) {
         // No keys left, remove backup
         const backupPath = path.join(keysDir, 'high-security.ctg-backup');
@@ -472,7 +489,7 @@ app.get('/api/keys/backups', (_req, res) => {
     }
 
     const files = fs.readdirSync(keysDir)
-      .filter((f) => f.endsWith('.ctg-backup'))
+      .filter((f) => f.endsWith('.ctg-backup') && f !== 'high-security.ctg-backup')
       .map((f) => {
         const stat = fs.statSync(path.join(keysDir, f));
         return { fileName: f, createdAt: stat.mtimeMs, size: stat.size };
