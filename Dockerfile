@@ -42,7 +42,7 @@ COPY tsconfig.json ./
 RUN mkdir -p keys files download log
 
 # Default config
-COPY config.json ./
+COPY template.config.json ./config.json
 
 EXPOSE 3001
 
