@@ -24,6 +24,26 @@ The software is developped using TypeScript over Node.js.
 - **Web UI, CLI, and TypeScript SDK** — Google Drive-style interface with drag & drop, inline rename, context menu
 - **Docker-ready** — deploy in one command
 
+## Security & Compliance
+
+Close the Gate follows a strict zero-knowledge model: all cryptographic operations happen client-side, and AWS never receives plaintext or key material. For a full analysis of trust boundaries and what the tool does and does not protect against, see [THREAT_MODEL.md](THREAT_MODEL.md).
+
+The controls below map common compliance requirements to concrete features. This is an indication of how the tool supports these frameworks, not a certification.
+
+| Requirement | Frameworks | How Close the Gate addresses it |
+|---|---|---|
+| Encryption of data at rest | SOC 2 (CC6.1), ISO 27001 (A.8.24), GDPR (Art. 32), HIPAA (§164.312(a)(2)(iv)) | AES-256-GCM client-side encryption; S3 stores only ciphertext |
+| Encryption in transit | SOC 2 (CC6.1), ISO 27001 (A.8.24), HIPAA (§164.312(e)(1)) | All AWS SDK calls use TLS |
+| Customer-managed key ownership | SOC 2 (CC6.1), GDPR (Art. 28 — processor access) | Keys are generated and stored locally; the cloud provider is never a key custodian |
+| Key rotation | SOC 2 (CC6.1), ISO 27001 (A.8.24), PCI DSS (3.6.4) | Per-file, batch, emergency, and scheduled automatic rotation |
+| Audit logging / traceability | SOC 2 (CC7.2), ISO 27001 (A.8.15), HIPAA (§164.312(b)) | Every operation is appended to a tamper-evident HMAC hash-chained log |
+| Log integrity / tamper evidence | SOC 2 (CC7.2), ISO 27001 (A.8.15) | Chain verification detects any modification or deletion of past entries |
+| Data minimization / confidentiality of metadata | GDPR (Art. 5(1)(c)) | File names are HMAC-hashed before leaving the client |
+| Secure key backup | ISO 27001 (A.8.24), NIST SP 800-57 | Password-protected backups using PBKDF2 (600k iterations, SHA-512) + AES-256-GCM |
+| Access protection for sensitive material | SOC 2 (CC6.1), ISO 27001 (A.8.3) | High Security mode keeps keys in RAM only, with inactivity wipe |
+
+> **Note for reviewers:** these mappings describe application-level controls. A production deployment should be paired with AWS infrastructure controls (least-privilege IAM, S3 Object Lock, bucket policies denying non-TLS, CloudTrail). See the hardening recommendations in [THREAT_MODEL.md](THREAT_MODEL.md).
+
 ## Prerequisites
 
 - Node.js (v22.0.0+).
