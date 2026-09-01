@@ -30,17 +30,17 @@ Close the Gate follows a strict zero-knowledge model: all cryptographic operatio
 
 The controls below map common compliance requirements to concrete features. This is an indication of how the tool supports these frameworks, not a certification.
 
-| Requirement | Frameworks | How Close the Gate addresses it |
-|---|---|---|
-| Encryption of data at rest | SOC 2 (CC6.1), ISO 27001 (A.8.24), GDPR (Art. 32), HIPAA (§164.312(a)(2)(iv)) | AES-256-GCM client-side encryption; S3 stores only ciphertext |
-| Encryption in transit | SOC 2 (CC6.1), ISO 27001 (A.8.24), HIPAA (§164.312(e)(1)) | All AWS SDK calls use TLS |
-| Customer-managed key ownership | SOC 2 (CC6.1), GDPR (Art. 28 — processor access) | Keys are generated and stored locally; the cloud provider is never a key custodian |
-| Key rotation | SOC 2 (CC6.1), ISO 27001 (A.8.24), PCI DSS (3.6.4) | Per-file, batch, emergency, and scheduled automatic rotation |
-| Audit logging / traceability | SOC 2 (CC7.2), ISO 27001 (A.8.15), HIPAA (§164.312(b)) | Every operation is appended to a tamper-evident HMAC hash-chained log |
-| Log integrity / tamper evidence | SOC 2 (CC7.2), ISO 27001 (A.8.15) | Chain verification detects any modification or deletion of past entries |
-| Data minimization / confidentiality of metadata | GDPR (Art. 5(1)(c)) | File names are HMAC-hashed before leaving the client |
-| Secure key backup | ISO 27001 (A.8.24), NIST SP 800-57 | Password-protected backups using PBKDF2 (600k iterations, SHA-512) + AES-256-GCM |
-| Access protection for sensitive material | SOC 2 (CC6.1), ISO 27001 (A.8.3) | High Security mode keeps keys in RAM only, with inactivity wipe |
+| Requirement                                     | Frameworks                                                                    | How Close the Gate addresses it                                                    |
+| ----------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Encryption of data at rest                      | SOC 2 (CC6.1), ISO 27001 (A.8.24), GDPR (Art. 32), HIPAA (§164.312(a)(2)(iv)) | AES-256-GCM client-side encryption; S3 stores only ciphertext                      |
+| Encryption in transit                           | SOC 2 (CC6.1), ISO 27001 (A.8.24), HIPAA (§164.312(e)(1))                     | All AWS SDK calls use TLS                                                          |
+| Customer-managed key ownership                  | SOC 2 (CC6.1), GDPR (Art. 28 — processor access)                              | Keys are generated and stored locally; the cloud provider is never a key custodian |
+| Key rotation                                    | SOC 2 (CC6.1), ISO 27001 (A.8.24), PCI DSS (3.6.4)                            | Per-file, batch, emergency, and scheduled automatic rotation                       |
+| Audit logging / traceability                    | SOC 2 (CC7.2), ISO 27001 (A.8.15), HIPAA (§164.312(b))                        | Every operation is appended to a tamper-evident HMAC hash-chained log              |
+| Log integrity / tamper evidence                 | SOC 2 (CC7.2), ISO 27001 (A.8.15)                                             | Chain verification detects any modification or deletion of past entries            |
+| Data minimization / confidentiality of metadata | GDPR (Art. 5(1)(c))                                                           | File names are HMAC-hashed before leaving the client                               |
+| Secure key backup                               | ISO 27001 (A.8.24), NIST SP 800-57                                            | Password-protected backups using PBKDF2 (600k iterations, SHA-512) + AES-256-GCM   |
+| Access protection for sensitive material        | SOC 2 (CC6.1), ISO 27001 (A.8.3)                                              | High Security mode keeps keys in RAM only, with inactivity wipe                    |
 
 > **Note for reviewers:** these mappings describe application-level controls. A production deployment should be paired with AWS infrastructure controls (least-privilege IAM, S3 Object Lock, bucket policies denying non-TLS, CloudTrail). See the hardening recommendations in [THREAT_MODEL.md](THREAT_MODEL.md).
 
@@ -65,7 +65,7 @@ DYNAMO_TABLE=your-table-name
 
 ```bash
 docker build -t close-the-gate .
-docker run -d -p 3001:3001 --env-file .env -v ./keys:/app/keys -v ./config.json:/app/config.json close-the-gate
+docker run -d -p 3001:3001 --env-file .env -v ./keys:/app/keys -v ./template.config.json:/app/config.json close-the-gate
 ```
 
 Then open `http://localhost:3001`.
@@ -84,7 +84,13 @@ docker compose up -d
 npm install
 ```
 
-2. Build the TypeScript project:
+2. Copy the template configuration file to `config.json`:
+
+```bash
+cp template.config.json config.json
+```
+
+3. Build the TypeScript project:
 
 ```bash
 npx tsc
@@ -244,8 +250,8 @@ ctg restore-keys -p "my-strong-password" -f ./keys/ctg-backup-2026-08-17.ctg-bac
 You can also import and use the core classes (`Key` and `File`) directly in your Node.js code.
 
 ```typescript
-import Key from "./keys";
-import File from "./files";
+import Key from './keys';
+import File from './files';
 
 const key = new Key();
 const file = new File();
@@ -261,15 +267,15 @@ key.generate(bytes);
 If you want to retrieve an existing key, retrieve it via the .retrieve("key_name") method (the key need to be placed in the /keys folder at the root of the folder or you need to declare a specific path by adding it as a string in a second argument)
 
 ```typescript
-key.retrieve("010c0295-4c46-4b70-8768-b1c4c461f72f.pem");
+key.retrieve('010c0295-4c46-4b70-8768-b1c4c461f72f.pem');
 ```
 
 You can start working with your files (located in the /files folder at the root of the folder or you need to declare a specific path by adding it as a string in a second argument)
 
 ```typescript
-file.upload("example.txt", key);
-file.download("example.txt", key);
-file.delete("example.txt", key);
+file.upload('example.txt', key);
+file.download('example.txt', key);
+file.delete('example.txt', key);
 ```
 
 You always have to pass the fileName as the first parameter and the key object as the second parameter. Don't forget to call key.retrieve("key_name.pem") before you download or delete a file associated with this relevant key. You can also add a third parameter to define a custom file path for the upload and download methods.

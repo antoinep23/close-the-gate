@@ -4,18 +4,10 @@
   "downloadPath": "./download",
   "region": "eu-west-1",
   "autoRotation": {
-    "enabled": true,
+    "enabled": false,
     "intervalDays": 90,
     "targetKey": "__auto_generate__"
   },
-  "folders": [
-    "/",
-    "/pictures",
-    "/pictures/2025",
-    "/pictures/2024",
-    "/2026",
-    "/finance",
-    "/reports"
-  ],
+  "folders": [],
   "highSecurity": false
 }
