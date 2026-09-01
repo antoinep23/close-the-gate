@@ -18,6 +18,7 @@ import { MoveFileModal } from './components/MoveFileModal';
 import { MoveFolderModal } from './components/MoveFolderModal';
 import { EmergencyRotationModal } from './components/EmergencyRotationModal';
 import { CreateFolderModal } from './components/CreateFolderModal';
+import { AiOutlineLock } from 'react-icons/ai';
 import { useFiles } from './hooks/useFiles';
 import { useSettings } from './hooks/useSettings';
 import { useKeys } from './hooks/useKeys';
@@ -267,6 +268,8 @@ function App() {
 
   const isMyDrive = activeSection === 'my-drive';
   const isDownloaded = activeSection === 'downloaded';
+  // When high security is enabled but not unlocked, hide files and folders
+  const isLocked = lockStatus.highSecurity && !lockStatus.unlocked;
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -293,6 +296,7 @@ function App() {
           onGenerateKey={() => { setKeyGenOpen(true); setSidebarOpen(false); }}
           onDeleteKey={(k) => { setKeyToDelete(k); setSidebarOpen(false); }}
           onBackupClick={() => { setBackupOpen(true); setSidebarOpen(false); }}
+          isLocked={isLocked}
           mobileOpen={sidebarOpen}
           onMobileClose={() => setSidebarOpen(false)}
         />
@@ -331,7 +335,12 @@ function App() {
             onRotateComplete={() => { refetch(); refetchKeys(); addToast('success', 'Key rotation completed'); }}
             onError={(err) => addToast('error', err)}
           />
-          {activeSection === 'logs' ? (
+          {isLocked ? (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-2">
+              <AiOutlineLock className="w-8 h-8" />
+              <p className="text-sm">Content is hidden. Unlock to view your data.</p>
+            </div>
+          ) : activeSection === 'logs' ? (
             <LogViewer />
           ) : loading ? (
             <div className="flex items-center justify-center h-64">
