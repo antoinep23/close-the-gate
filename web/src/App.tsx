@@ -18,7 +18,6 @@ import { MoveFileModal } from './components/MoveFileModal';
 import { MoveFolderModal } from './components/MoveFolderModal';
 import { EmergencyRotationModal } from './components/EmergencyRotationModal';
 import { CreateFolderModal } from './components/CreateFolderModal';
-import { AiOutlineLock } from 'react-icons/ai';
 import { useFiles } from './hooks/useFiles';
 import { useSettings } from './hooks/useSettings';
 import { useKeys } from './hooks/useKeys';
@@ -316,7 +315,7 @@ function App() {
               </span>
             )}
           </div>
-          {isMyDrive && (
+          {isMyDrive && !isLocked && (
             <div className="px-6 pb-2">
               <FolderBreadcrumb
                 currentFolder={currentFolder}
@@ -325,21 +324,15 @@ function App() {
               />
             </div>
           )}
-          {lockStatus.highSecurity && !lockStatus.unlocked && (
-            <UnlockBanner
-              onUnlockSuccess={handleUnlockSuccess}
-              onError={(err) => addToast('error', err)}
-            />
-          )}
           <RotationBanner
             onRotateComplete={() => { refetch(); refetchKeys(); addToast('success', 'Key rotation completed'); }}
             onError={(err) => addToast('error', err)}
           />
           {isLocked ? (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-2">
-              <AiOutlineLock className="w-8 h-8" />
-              <p className="text-sm">Content is hidden. Unlock to view your data.</p>
-            </div>
+            <UnlockBanner
+              onUnlockSuccess={handleUnlockSuccess}
+              onError={(err) => addToast('error', err)}
+            />
           ) : activeSection === 'logs' ? (
             <LogViewer />
           ) : loading ? (
