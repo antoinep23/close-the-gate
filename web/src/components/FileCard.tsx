@@ -1,5 +1,17 @@
 import { useState, useRef } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen, AiOutlineEdit } from 'react-icons/ai';
+import {
+  AiOutlineDownload,
+  AiOutlineLoading3Quarters,
+  AiOutlineStar,
+  AiFillStar,
+  AiOutlineDelete,
+  AiOutlineSync,
+  AiOutlineLock,
+  AiOutlineUnlock,
+  AiOutlineEye,
+  AiOutlineFolderOpen,
+  AiOutlineEdit,
+} from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { formatDate, formatSize } from '../utils/format';
@@ -25,18 +37,52 @@ interface FileCardProps {
   hideDownload?: boolean;
 }
 
-export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onRename, onSelect, hideDownload }: FileCardProps) {
+export function FileCard({
+  file,
+  onDownloadSuccess,
+  onDownloadError,
+  onFileOpen,
+  onStarToggle,
+  onDeleteSuccess,
+  onDeleteError,
+  onDeleteLocalSuccess,
+  onDeleteLocalError,
+  onRotateClick,
+  onPreviewClick,
+  onMoveClick,
+  onProtectionChange,
+  onRename,
+  onSelect,
+  hideDownload,
+}: FileCardProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(file.fileName);
   const {
-    downloading, deleting, confirmOpen, setConfirmOpen, unlockOpen, setUnlockOpen,
-    starred, isProtected, isLocalDelete,
-    handleDownload, handleStar, handleLock, confirmUnlock, handleDelete, confirmDelete,
+    downloading,
+    deleting,
+    confirmOpen,
+    setConfirmOpen,
+    unlockOpen,
+    setUnlockOpen,
+    starred,
+    isProtected,
+    isLocalDelete,
+    handleDownload,
+    handleStar,
+    handleLock,
+    confirmUnlock,
+    handleDelete,
+    confirmDelete,
   } = useFileActions(file, {
-    onDownloadSuccess, onDownloadError, onStarToggle,
-    onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError,
+    onDownloadSuccess,
+    onDownloadError,
+    onStarToggle,
+    onDeleteSuccess,
+    onDeleteError,
+    onDeleteLocalSuccess,
+    onDeleteLocalError,
     onProtectionChange,
   });
 
@@ -62,7 +108,10 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
 
   function handleRenameKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') handleRenameSubmit();
-    if (e.key === 'Escape') { setEditing(false); setEditName(file.fileName); }
+    if (e.key === 'Escape') {
+      setEditing(false);
+      setEditName(file.fileName);
+    }
   }
 
   function handleDoubleClick() {
@@ -80,13 +129,18 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       draggable
-      onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.fileName); e.dataTransfer.effectAllowed = 'move'; }}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', file.fileName);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
       className="group relative border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all flex flex-col h-full active:bg-blue-100"
     >
       {/* Persistent badges */}
       <div className="absolute top-2 right-2 flex items-center gap-0.5">
         {starred && <AiFillStar className="w-3.5 h-3.5 text-yellow-400" />}
-        {isProtected && <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" />}
+        {isProtected && (
+          <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" />
+        )}
       </div>
 
       {/* File icon */}
@@ -108,16 +162,19 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         />
       ) : (
         <div className="flex items-center justify-center gap-1 w-full px-1">
-          <p className="text-sm text-gray-800 text-center truncate" title={file.fileName}>
+          <p
+            className="text-sm text-gray-800 text-center truncate"
+            title={file.fileName}
+          >
             {file.fileName}
           </p>
           {onRename && (
             <button
               onClick={handleNameClick}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-100 cursor-pointer transition-all flex-shrink-0"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-100 cursor-pointer transition-all shrink-0"
               title="Rename"
             >
-              <AiOutlineEdit className="w-3 h-3 text-gray-400" />
+              <AiOutlineEdit className="w-0 h-0 group-hover:w-3 group-hover:h-3 text-gray-400" />
             </button>
           )}
         </div>
@@ -133,7 +190,10 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 border-t border-gray-100 rounded-b-xl px-2 py-1.5 flex items-center justify-center gap-0.5">
         {onPreviewClick && (
           <button
-            onClick={(e) => { e.stopPropagation(); onPreviewClick(file.fileName, file.keyName); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPreviewClick(file.fileName, file.keyName);
+            }}
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title="Preview"
           >
@@ -156,7 +216,10 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         )}
         {onRotateClick && (
           <button
-            onClick={(e) => { e.stopPropagation(); onRotateClick(file.fileName, file.keyName); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRotateClick(file.fileName, file.keyName);
+            }}
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title="Rotate key"
           >
@@ -165,7 +228,10 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
         )}
         {onMoveClick && (
           <button
-            onClick={(e) => { e.stopPropagation(); onMoveClick(file.fileName, file.folder || '/'); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveClick(file.fileName, file.folder || '/');
+            }}
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title="Move to folder"
           >
@@ -178,7 +244,11 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             className="p-1.5 rounded-md cursor-pointer transition-colors group/star"
             title={starred ? 'Unstar' : 'Star'}
           >
-            {starred ? <AiFillStar className="w-3.5 h-3.5 text-yellow-400" /> : <AiOutlineStar className="w-3.5 h-3.5 text-gray-500 group-hover/star:text-yellow-400" />}
+            {starred ? (
+              <AiFillStar className="w-3.5 h-3.5 text-yellow-400" />
+            ) : (
+              <AiOutlineStar className="w-3.5 h-3.5 text-gray-500 group-hover/star:text-yellow-400" />
+            )}
           </button>
         )}
         {!isLocalDelete && (
@@ -187,7 +257,11 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
             className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
             title={isProtected ? 'Remove protection' : 'Protect'}
           >
-            {isProtected ? <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" /> : <AiOutlineUnlock className="w-3.5 h-3.5 text-gray-500" />}
+            {isProtected ? (
+              <AiOutlineLock className="w-3.5 h-3.5 text-amber-500" />
+            ) : (
+              <AiOutlineUnlock className="w-3.5 h-3.5 text-gray-500" />
+            )}
           </button>
         )}
         {!isProtected ? (
@@ -213,9 +287,10 @@ export function FileCard({ file, onDownloadSuccess, onDownloadError, onFileOpen,
       <ConfirmModal
         isOpen={confirmOpen}
         title={isLocalDelete ? 'Remove local file' : 'Delete file'}
-        message={isLocalDelete
-          ? `Remove "${file.fileName}" from local downloads?`
-          : `"${file.fileName}" will be permanently deleted from the cloud bucket. This cannot be undone.`
+        message={
+          isLocalDelete
+            ? `Remove "${file.fileName}" from local downloads?`
+            : `"${file.fileName}" will be permanently deleted from the cloud bucket. This cannot be undone.`
         }
         confirmLabel={isLocalDelete ? 'Remove' : 'Delete'}
         onConfirm={confirmDelete}
