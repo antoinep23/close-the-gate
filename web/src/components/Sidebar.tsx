@@ -15,6 +15,7 @@ interface SidebarProps {
   onGenerateKey: () => void;
   onDeleteKey: (keyName: string) => void;
   onBackupClick: () => void;
+  isLocked?: boolean;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }
@@ -43,7 +44,7 @@ function estimateMonthlyCost(totalBytes: number, region: string): string {
   return `~$${cost.toFixed(2)}`;
 }
 
-export function Sidebar({ activeSection, onSectionChange, files, keys, region, onUploadClick, onGenerateKey, onDeleteKey, onBackupClick, mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, files, keys, region, onUploadClick, onGenerateKey, onDeleteKey, onBackupClick, isLocked, mobileOpen, onMobileClose }: SidebarProps) {
   const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
   const totalStorageSize = formatSize(totalBytes);
   const monthlyCost = estimateMonthlyCost(totalBytes, region);
@@ -135,7 +136,7 @@ export function Sidebar({ activeSection, onSectionChange, files, keys, region, o
           </div>
 
           {keys.length === 0 ? (
-            <p className="px-4 text-xs text-gray-400 italic">No keys found</p>
+            <p className="px-4 text-xs text-gray-400 italic">{isLocked ? 'Keys locked' : 'No keys found'}</p>
           ) : (
             keys.map((keyName) => (
               <div
