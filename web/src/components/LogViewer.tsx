@@ -17,6 +17,9 @@ interface VerifyResult {
   reason?: string;
 }
 
+// Number of log entries displayed per page
+const PAGE_SIZE = 50;
+
 const ALL_ACTIONS: Record<AuditAction, string> = {
   'upload': 'Upload',
   'download': 'Download',
@@ -88,6 +91,7 @@ export function LogViewer() {
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -103,7 +107,7 @@ export function LogViewer() {
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/audit-log?limit=200');
+      const res = await fetch('/api/audit-log?limit=1000');
       if (res.ok) setEntries(await res.json());
     } catch { /* silently fail */ }
     setLoading(false);
@@ -163,6 +167,17 @@ export function LogViewer() {
       return true;
     });
   }, [entries, selectedActions, dateFrom, dateTo, searchQuery]);
+
+  // Reset to first page whenever the filtered result set changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedActions, dateFrom, dateTo, searchQuery, entries]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const pageEntries = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredEntries.slice(start, start + PAGE_SIZE);
+  }, [filteredEntries, currentPage]);
 
 
 
@@ -306,7 +321,7 @@ export function LogViewer() {
             </tr>
           </thead>
           <tbody>
-            {filteredEntries.map((entry, i) => (
+            {pageEntries.map((entry, i) => (
               <tr key={`${entry.hash}-${i}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                 <td className="py-2 pl-2 pr-4 text-gray-400 font-mono text-[11px]">{entry.eventId || entry.hash.slice(0, 8)}</td>
                 <td className="py-2 pr-4 text-gray-700">{ALL_ACTIONS[entry.action] || entry.action}</td>
@@ -316,6 +331,34 @@ export function LogViewer() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {/* Pagination */}
+      {!loading && filteredEntries.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+          <span>
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-gray-600">
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
