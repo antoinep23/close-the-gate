@@ -97,6 +97,7 @@ interface FileGridProps {
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
   onPreviewClick?: (fileName: string, keyName: string) => void;
+  onShareClick?: (fileName: string, keyName: string) => void;
   onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   onFolderClick?: (folder: string) => void;
@@ -156,6 +157,7 @@ export function FileGrid({
   onDeleteLocalError,
   onRotateClick,
   onPreviewClick,
+  onShareClick,
   onMoveClick,
   onProtectionChange,
   onFolderClick,
@@ -303,6 +305,7 @@ export function FileGrid({
               {onPreviewClick && <th className="pb-3 font-medium w-10"></th>}
               {!hideDownload && <th className="pb-3 font-medium w-10"></th>}
               {onRotateClick && <th className="pb-3 font-medium w-10"></th>}
+              {onShareClick && <th className="pb-3 font-medium w-10"></th>}
               {!hideDownload && <th className="pb-3 font-medium w-10"></th>}
               {!hideDownload && <th className="pb-3 font-medium w-10"></th>}
               {onMoveClick && <th className="pb-3 font-medium w-10"></th>}
@@ -422,6 +425,7 @@ export function FileGrid({
                     {onPreviewClick && <td className="py-3"></td>}
                     {!hideDownload && <td className="py-3"></td>}
                     {onRotateClick && <td className="py-3"></td>}
+                    {onShareClick && <td className="py-3"></td>}
                     {!hideDownload && <td className="py-3"></td>}
                     {!hideDownload && <td className="py-3"></td>}
                     {onMoveClick && (
@@ -467,6 +471,7 @@ export function FileGrid({
                 onDeleteLocalError={onDeleteLocalError}
                 onRotateClick={onRotateClick}
                 onPreviewClick={onPreviewClick}
+                onShareClick={onShareClick}
                 onMoveClick={onMoveClick}
                 onProtectionChange={onProtectionChange}
                 onRename={onRenameFile}
@@ -608,6 +613,7 @@ export function FileGrid({
             onDeleteLocalError={onDeleteLocalError}
             onRotateClick={onRotateClick}
             onPreviewClick={onPreviewClick}
+            onShareClick={onShareClick}
             onMoveClick={onMoveClick}
             onProtectionChange={onProtectionChange}
             onRename={onRenameFile}

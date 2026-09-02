@@ -437,3 +437,26 @@ export async function renameFolder(oldPath: string, newName: string): Promise<{ 
 
   return { success: true };
 }
+
+export async function shareFile(
+  fileName: string,
+  keyName: string
+): Promise<{ success: boolean; link?: string; token?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName, keyName }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Share failed' };
+    }
+
+    return { success: true, link: data.link, token: data.token };
+  } catch {
+    return { success: false, error: 'Network error' };
+  }
+}

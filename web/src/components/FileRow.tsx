@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen, AiOutlineEdit } from 'react-icons/ai';
+import { AiOutlineDownload, AiOutlineLoading3Quarters, AiOutlineStar, AiFillStar, AiOutlineDelete, AiOutlineSync, AiOutlineLock, AiOutlineUnlock, AiOutlineEye, AiOutlineFolderOpen, AiOutlineEdit, AiOutlineShareAlt } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
 import { formatDate, formatSize } from '../utils/format';
@@ -18,6 +18,7 @@ interface FileRowProps {
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
   onPreviewClick?: (fileName: string, keyName: string) => void;
+  onShareClick?: (fileName: string, keyName: string) => void;
   onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   onRename?: (oldName: string, newName: string) => void;
@@ -25,7 +26,7 @@ interface FileRowProps {
   hideDownload?: boolean;
 }
 
-export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onMoveClick, onProtectionChange, onRename, onSelect, hideDownload }: FileRowProps) {
+export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, onStarToggle, onDeleteSuccess, onDeleteError, onDeleteLocalSuccess, onDeleteLocalError, onRotateClick, onPreviewClick, onShareClick, onMoveClick, onProtectionChange, onRename, onSelect, hideDownload }: FileRowProps) {
   const { icon: Icon, color } = getFileIcon(file.fileName);
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -189,6 +190,18 @@ export function FileRow({ file, onDownloadSuccess, onDownloadError, onFileOpen, 
               title="Rotate key"
             >
               <AiOutlineSync className="w-4 h-4 text-gray-500" />
+            </button>
+          </td>
+        )}
+        {onShareClick && (
+          <td className="py-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); onShareClick(file.fileName, file.keyName); }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 cursor-pointer transition-all"
+              aria-label={`Share ${file.fileName}`}
+              title="Share"
+            >
+              <AiOutlineShareAlt className="w-4 h-4 text-gray-500" />
             </button>
           </td>
         )}

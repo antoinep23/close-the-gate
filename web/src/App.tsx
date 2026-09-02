@@ -13,6 +13,7 @@ import { ConfirmModal } from './components/ConfirmModal';
 import { ToastContainer } from './components/Toast';
 import { BackupKeysModal } from './components/BackupKeysModal';
 import { RotateKeyModal } from './components/RotateKeyModal';
+import { ShareModal } from './components/ShareModal';
 import { PreviewModal } from './components/PreviewModal';
 import { MoveFileModal } from './components/MoveFileModal';
 import { MoveFolderModal } from './components/MoveFolderModal';
@@ -46,6 +47,7 @@ function App() {
   const [backupOpen, setBackupOpen] = useState(false);
   const [rotateFile, setRotateFile] = useState<{ fileName: string; keyName: string } | null>(null);
   const [previewFile, setPreviewFile] = useState<{ fileName: string; keyName: string } | null>(null);
+  const [shareFileTarget, setShareFileTarget] = useState<{ fileName: string; keyName: string } | null>(null);
   const [moveFile, setMoveFile] = useState<{ fileName: string; folder: string } | null>(null);
   const [emergencyRotationOpen, setEmergencyRotationOpen] = useState(false);
   const [moveFolderSource, setMoveFolderSource] = useState<string | null>(null);
@@ -355,6 +357,7 @@ function App() {
               onDeleteLocalError={isDownloaded ? onDeleteLocalError : undefined}
               onRotateClick={!isDownloaded ? (fileName, keyName) => setRotateFile({ fileName, keyName }) : undefined}
               onPreviewClick={!isDownloaded ? (fileName, keyName) => setPreviewFile({ fileName, keyName }) : undefined}
+              onShareClick={!isDownloaded ? (fileName, keyName) => setShareFileTarget({ fileName, keyName }) : undefined}
               onMoveClick={!isDownloaded ? (fileName, folder) => setMoveFile({ fileName, folder }) : undefined}
               onProtectionChange={!isDownloaded ? () => refetch() : undefined}
               onFolderClick={isMyDrive ? setCurrentFolder : undefined}
@@ -437,6 +440,13 @@ function App() {
         keyName={previewFile?.keyName || ''}
         onClose={() => setPreviewFile(null)}
         onError={(fileName, err) => addToast('error', `Preview failed for "${fileName}": ${err}`)}
+      />
+      <ShareModal
+        isOpen={!!shareFileTarget}
+        fileName={shareFileTarget?.fileName || ''}
+        keyName={shareFileTarget?.keyName || ''}
+        onClose={() => setShareFileTarget(null)}
+        onError={(fileName, err) => addToast('error', `Share failed for "${fileName}": ${err}`)}
       />
       <MoveFileModal
         isOpen={!!moveFile}

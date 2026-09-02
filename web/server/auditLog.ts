@@ -13,6 +13,7 @@ export type AuditAction =
   | 'download'
   | 'delete'
   | 'preview'
+  | 'share'
   | 'rename'
   | 'move'
   | 'rotate'
