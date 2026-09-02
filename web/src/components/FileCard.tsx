@@ -11,6 +11,7 @@ import {
   AiOutlineEye,
   AiOutlineFolderOpen,
   AiOutlineEdit,
+  AiOutlineShareAlt,
 } from 'react-icons/ai';
 import type { FileItem } from '../data/mockFiles';
 import { getFileIcon } from '../utils/fileIcons';
@@ -30,6 +31,7 @@ interface FileCardProps {
   onDeleteLocalError?: (fileName: string, error: string) => void;
   onRotateClick?: (fileName: string, keyName: string) => void;
   onPreviewClick?: (fileName: string, keyName: string) => void;
+  onShareClick?: (fileName: string, keyName: string) => void;
   onMoveClick?: (fileName: string, folder: string) => void;
   onProtectionChange?: (fileName: string, isProtected: boolean) => void;
   onRename?: (oldName: string, newName: string) => void;
@@ -49,6 +51,7 @@ export function FileCard({
   onDeleteLocalError,
   onRotateClick,
   onPreviewClick,
+  onShareClick,
   onMoveClick,
   onProtectionChange,
   onRename,
@@ -224,6 +227,18 @@ export function FileCard({
             title="Rotate key"
           >
             <AiOutlineSync className="w-3.5 h-3.5 text-gray-500" />
+          </button>
+        )}
+        {onShareClick && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onShareClick(file.fileName, file.keyName);
+            }}
+            className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
+            title="Share"
+          >
+            <AiOutlineShareAlt className="w-3.5 h-3.5 text-gray-500" />
           </button>
         )}
         {onMoveClick && (

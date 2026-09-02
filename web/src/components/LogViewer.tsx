@@ -25,6 +25,7 @@ const ALL_ACTIONS: Record<AuditAction, string> = {
   'download': 'Download',
   'delete': 'Delete',
   'preview': 'Preview',
+  'share': 'Share',
   'rename': 'Rename',
   'move': 'Move',
   'rotate': 'Rotate',

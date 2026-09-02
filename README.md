@@ -17,6 +17,7 @@ The software is developped using TypeScript over Node.js.
 - **AES-256-GCM encryption** with locally generated keys (mode 0600, never leave your machine)
 - **Zero-Knowledge storage** — S3 stores only ciphertext, file names are HMAC SHA-256 hashed
 - **In-memory file preview** — decrypt and view without writing to disk
+- **Zero-knowledge share links** — share a file via a public link; the file is re-encrypted with a single-use key that travels only in the URL fragment and is decrypted in the recipient's browser
 - **Key rotation** — per-file, batch, emergency, or automatic with configurable intervals
 - **High security mode** — keys encrypted at rest, decrypted in RAM only when unlocked
 - **Password-protected key backup and restore** (PBKDF2 + AES-256-GCM)
@@ -57,6 +58,8 @@ Create a `.env` file at the root of the project with your AWS configuration:
 AWS_REGION=your-region
 S3_BUCKET=your-bucket-name
 DYNAMO_TABLE=your-table-name
+# Optional — only needed to enable share links (see "Sharing files" below)
+LAMBDA_URL=https://<id>.lambda-url.<region>.on.aws
 ```
 
 ## Installation
@@ -129,6 +132,7 @@ The web interface also provides:
 - Per-file deletion protection (lock/unlock with confirmation)
 - Sortable file list by date and size (list and grid view)
 - Custom drag preview (icon + filename) for clean drag & drop UX
+- Zero-knowledge share links (see [Sharing files](#sharing-files-zero-knowledge-links) below)
 
 ![Close the Gate Web UI](resources/screen_ui.png)
 
@@ -143,6 +147,23 @@ The web interface also provides:
 |         In-memory file preview         |                 High security mode                 |
 | :------------------------------------: | :------------------------------------------------: |
 | ![Preview](resources/file_preview.png) | ![High Security](resources/high_security_mode.png) |
+
+#### Sharing files (zero-knowledge links)
+
+You can share a stored file via a public link without breaking the zero-knowledge model. Click the **Share** action on any file to generate a link.
+
+How it works:
+
+1. The local app decrypts the file in memory with your key, then re-encrypts it with a fresh **single-use ephemeral key** (AES-256-GCM). Your real key is never shared and never leaves your machine.
+2. The re-encrypted blob is uploaded to a dedicated `shared/` prefix in your bucket, under a random opaque token.
+3. The link has the form `https://<share-endpoint>/s/<token>#<ephemeral-key>`. The key lives in the URL **fragment** (`#...`), which browsers never send to the server.
+4. The recipient opens the link. A small page served by a public AWS Lambda fetches the encrypted blob (via a short-lived presigned S3 URL) and **decrypts it in the recipient's browser**. The share endpoint never sees the key, the file name, or the plaintext.
+
+Enabling it requires deploying the share Lambda and setting `LAMBDA_URL` in your `.env`. See [`lambda/share/README.md`](lambda/share/README.md) for the Lambda, its least-privilege IAM policy, and the required S3 CORS configuration.
+
+To revoke a link, delete its object under `shared/`. In practice, links are also made ephemeral by an S3 lifecycle rule on the `shared/` prefix (e.g. auto-expire after a couple of days).
+
+> **Note:** anyone who has the full link (token + key fragment) can view the file — that is the point of a shareable link. Treat share links as secrets and prefer a short lifecycle. The share endpoint is public and unauthenticated by design; for production, front it with rate-limiting and monitoring (see [THREAT_MODEL.md](THREAT_MODEL.md)).
 
 ### 2. Command Line Interface (CLI)
 

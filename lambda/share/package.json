@@ -1,0 +1,12 @@
+{
+  "name": "ctg-share-lambda",
+  "version": "1.0.0",
+  "description": "Zero-knowledge public share endpoint for Close the Gate. Serves the client-side decryption page and the encrypted blob; never sees the key.",
+  "type": "module",
+  "main": "index.mjs",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1124.0",
+    "@aws-sdk/s3-request-presigner": "^3.1124.0"
+  }
+}

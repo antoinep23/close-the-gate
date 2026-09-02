@@ -10,6 +10,7 @@ import { DynamoDBClient, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import downloadRouter from './download';
 import uploadRouter from './upload';
+import shareRouter from './share';
 import KeyModule from '../../src/keys';
 import { keyStore, isUnlocked, setUnlocked, resetLockTimeout, clearLockTimeout, isHighSecurity, retrieveKey, setSessionPassword, getSessionPassword, secureWipe } from './keyStore';
 import { audit, readAuditLog, verifyAuditLog } from './auditLog';
@@ -655,6 +656,9 @@ app.use('/api', downloadRouter);
 
 // --- Upload endpoint (uses core Key/File classes) ---
 app.use('/api', uploadRouter);
+
+// --- Share endpoint (zero-knowledge share link generation) ---
+app.use('/api', shareRouter);
 
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 const tableName = process.env.DYNAMO_TABLE!;
