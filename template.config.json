@@ -8,6 +8,6 @@
     "intervalDays": 90,
     "targetKey": "__auto_generate__"
   },
-  "folders": [],
+  "folders": ["/"],
   "highSecurity": false
 }
