@@ -13,8 +13,8 @@ export function FetchErrorScreen({ message, onRetry, retrying }: FetchErrorScree
         {/* Card */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-8 py-10 text-center">
           {/* Icon */}
-          <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-yellow-50">
-            <AiOutlineExclamationCircle className="w-8 h-8 text-yellow-500" />
+          <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-blue-50">
+            <AiOutlineExclamationCircle className="w-8 h-8 text-blue-600" />
           </div>
 
           <h2 className="text-xl font-medium text-gray-800 mb-1.5">Can’t reach your drive</h2>
