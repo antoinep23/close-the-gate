@@ -6,25 +6,26 @@ export function useFiles() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchFiles() {
-      try {
-        const res = await fetch('/api/files');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: FileItem[] = await res.json();
-        setFiles(data);
-        setError(null);
-      } catch (err) {
-        console.warn('API unavailable: ', err);
-        setFiles([]);
-        setError('Failed to fetch files. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/files');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: FileItem[] = await res.json();
+      setFiles(data);
+      setError(null);
+    } catch (err) {
+      console.warn('API unavailable: ', err);
+      setFiles([]);
+      setError('Failed to fetch files. Please try again later.');
+    } finally {
+      setLoading(false);
     }
-
-    fetchFiles();
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const updateFileStar = useCallback((fileName: string, isStarred: boolean) => {
     setFiles((prev) =>
@@ -38,10 +39,11 @@ export function useFiles() {
       if (!res.ok) return;
       const data: FileItem[] = await res.json();
       setFiles(data);
+      setError(null);
     } catch {
       // silently fail
     }
   }, []);
 
-  return { files, loading, error, updateFileStar, refetch };
+  return { files, loading, error, updateFileStar, refetch, retry: load };
 }

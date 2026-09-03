@@ -6,6 +6,7 @@ import { LogViewer } from './components/LogViewer';
 import { RotationBanner } from './components/RotationBanner';
 import { FolderBreadcrumb } from './components/FolderBreadcrumb';
 import { UnlockBanner } from './components/UnlockBanner';
+import { FetchErrorScreen } from './components/FetchErrorScreen';
 import { SettingsModal } from './components/SettingsModal';
 import { UploadModal } from './components/UploadModal';
 import { KeyGenModal } from './components/KeyGenModal';
@@ -58,7 +59,7 @@ function App() {
 
   // Hooks
   const { toasts, addToast, dismissToast } = useToasts();
-  const { files, loading, error, updateFileStar, refetch } = useFiles();
+  const { files, loading, error, updateFileStar, refetch, retry } = useFiles();
   const { settings, saveSettings } = useSettings();
   const { keys, refetchKeys } = useKeys();
   const { lockStatus, handleLock, handleUnlockSuccess, handleHighSecurityToggle } = useLockStatus(refetchKeys, addToast, saveSettings);
@@ -271,6 +272,10 @@ function App() {
   const isDownloaded = activeSection === 'downloaded';
   // When high security is enabled but not unlocked, hide files and folders
   const isLocked = lockStatus.highSecurity && !lockStatus.unlocked;
+  // When the file list fails to load (backend unreachable / AWS creds), show a
+  // full blocking screen instead of an empty grid. Not for the logs section
+  // (which doesn't use the file list) and not while locked or still loading.
+  const showFetchError = !!error && !isLocked && !loading && activeSection !== 'logs';
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -311,13 +316,13 @@ function App() {
                 {settings.downloadPath || './download'}
               </span>
             )}
-            {error && (
+            {error && !showFetchError && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
                 {error}
               </span>
             )}
           </div>
-          {isMyDrive && !isLocked && (
+          {isMyDrive && !isLocked && !showFetchError && (
             <div className="px-6 pb-2">
               <FolderBreadcrumb
                 currentFolder={currentFolder}
@@ -341,6 +346,8 @@ function App() {
             <div className="flex items-center justify-center h-64">
               <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
+          ) : showFetchError ? (
+            <FetchErrorScreen message={error ?? undefined} onRetry={retry} />
           ) : (
             <FileGrid
               files={displayFiles}
