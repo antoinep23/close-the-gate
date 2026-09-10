@@ -24,6 +24,7 @@ The software is developped using TypeScript over Node.js.
 - **Audit trail** — see every action done on your drive, protected from tampering
 - **Web UI, CLI, and TypeScript SDK** — Google Drive-style interface with drag & drop, inline rename, context menu
 - **Docker-ready** — deploy in one command
+- **Infrastructure as Code** — provision the hardened AWS backend (S3, DynamoDB, share Lambda behind API Gateway + CloudFront, least-privilege IAM) with Terraform
 
 ## Security & Compliance
 
@@ -61,6 +62,21 @@ DYNAMO_TABLE=your-table-name
 # Optional — only needed to enable share links (see "Sharing files" below)
 LAMBDA_URL=https://<id>.lambda-url.<region>.on.aws
 ```
+
+You can point these at existing AWS resources, or provision them from scratch with the bundled Terraform (see below).
+
+## Deploying the AWS infrastructure (optional)
+
+The [`infra/`](infra) folder contains a Terraform module that provisions the full, hardened AWS backend in one command: the S3 bucket (Block Public Access, TLS-only, SSE, versioning, `shared/` lifecycle, CORS), the DynamoDB metadata table, the zero-knowledge share Lambda fronted by an API Gateway HTTP API + CloudFront (so the Lambda is never publicly exposed), and least-privilege IAM roles. It follows the hardening recommendations in [THREAT_MODEL.md](THREAT_MODEL.md).
+
+```bash
+cd lambda/share && npm install && cd ../..   # bundle the Lambda deps
+cd infra
+terraform init
+terraform apply
+```
+
+Then copy the outputs into your `.env` (`terraform output` maps each value to its variable). See [`infra/README.md`](infra/README.md) for the full list of resources, variables, and design notes.
 
 ## Installation
 
