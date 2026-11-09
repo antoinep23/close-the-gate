@@ -8,7 +8,7 @@ import { unmarshall } from '@aws-sdk/util-dynamodb';
 import KeyModule from '../../src/keys';
 import FileModule from '../../src/files';
 import { retrieveKey, isHighSecurity, isUnlocked, keyStore, getSessionPassword } from './keyStore';
-import { randomBytes, createSecretKey } from 'crypto';
+import { randomBytes } from 'crypto';
 
 // Handle default export interop (CJS/ESM mismatch)
 const Key = (KeyModule as any).default || KeyModule;
@@ -237,10 +237,12 @@ router.post('/files/rotate', async (req, res) => {
     const getCmd = new GetItemCommand({
       TableName: process.env.DYNAMO_TABLE!,
       Key: { fileName: { S: fileName } },
-      ProjectionExpression: 'folder',
+      ProjectionExpression: 'folder, uploadDate',
     });
     const record = await dynamoClient.send(getCmd);
-    const currentFolder = record.Item ? (unmarshall(record.Item).folder || '/') : '/';
+    const existing = record.Item ? unmarshall(record.Item) : {};
+    const currentFolder = existing.folder || '/';
+    const originalUploadDate = existing.uploadDate as string | undefined;
 
     // 1. Download & decrypt with current key
     const currentKey = retrieveKey(currentKeyName, keysPath);
@@ -252,7 +254,7 @@ router.post('/files/rotate', async (req, res) => {
     const newKey = retrieveKey(newKeyName, keysPath);
 
     const uploadFile = new File();
-    await uploadFile.upload(fileName, newKey, filesPath, false, undefined, currentFolder);
+    await uploadFile.upload(fileName, newKey, filesPath, false, undefined, currentFolder, originalUploadDate);
 
     // 3. Delete old S3 object only (DynamoDB already updated by upload)
     await file.deleteS3Object(fileName, currentKey);
@@ -405,6 +407,16 @@ router.post('/files/rotate-batch', async (req, res) => {
     }
 
     try {
+      // Preserve the original upload date (rotation must not reset it)
+      const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+      const getCmd = new GetItemCommand({
+        TableName: process.env.DYNAMO_TABLE!,
+        Key: { fileName: { S: fileName } },
+        ProjectionExpression: 'uploadDate',
+      });
+      const record = await dynamoClient.send(getCmd);
+      const originalUploadDate = record.Item ? (unmarshall(record.Item).uploadDate as string | undefined) : undefined;
+
       // Download & decrypt with current key
       const currentKey = retrieveKey(keyName, keysPath);
 
@@ -415,7 +427,7 @@ router.post('/files/rotate-batch', async (req, res) => {
       const newKey = retrieveKey(actualTargetKey, keysPath);
 
       const uploadFile = new File();
-      await uploadFile.upload(fileName, newKey, filesPath, false, undefined, folder || '/');
+      await uploadFile.upload(fileName, newKey, filesPath, false, undefined, folder || '/', originalUploadDate);
 
       // Only delete old S3 object after successful upload (DynamoDB already updated)
       await file.deleteS3Object(fileName, currentKey);
