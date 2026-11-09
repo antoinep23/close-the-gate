@@ -82,9 +82,15 @@ Then copy the outputs into your `.env` (`terraform output` maps each value to it
 
 ### Docker (recommended)
 
+First, create your runtime `config.json` from the template (it holds your folders and settings and is not overwritten on rebuild):
+
+```bash
+cp template.config.json config.json
+```
+
 ```bash
 docker build -t close-the-gate .
-docker run -d -p 3001:3001 --env-file .env -v ./keys:/app/keys -v ./template.config.json:/app/config.json close-the-gate
+docker run -d -p 3001:3001 --env-file .env -v ./keys:/app/keys -v ./config.json:/app/config.json close-the-gate
 ```
 
 Then open `http://localhost:3001`.

@@ -10,5 +10,5 @@ services:
       - ./files:/app/files
       - ./download:/app/download
       - ./log:/app/log
-      - ./template.config.json:/app/config.json
+      - ./config.json:/app/config.json
     restart: unless-stopped
